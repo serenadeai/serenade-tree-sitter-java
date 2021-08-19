@@ -9,3 +9,6 @@ test.java
 /examples/guava
 /examples/RxJava
 /target/
+tsx/binding.gyp
+tsx/Cargo.toml
+tsx/bindings/*
