@@ -3,7 +3,6 @@ const HEX_DIGITS = token(sep1(/[A-Fa-f0-9]+/, "_"));
 const PREC = {
   // https://introcs.cs.princeton.edu/java/11precedence/
   COMMENT: 0, // //  /*  */
-  STATEMENT_LIST: 0, // prioritize general statements last when writing program rule
   ASSIGN: 1, // =  += -=  *=  /=  %=  &=  ^=  |=  <<=  >>=  >>>=
   SWITCH_EXP: 1, // always prefer to parse switch as expression over statement
   DECL: 2,
@@ -35,7 +34,6 @@ module.exports = grammar({
 
   supertypes: ($) => [
     $.expression,
-    $.declaration,
     $.statement,
     $.primary_expression,
     $._literal,
@@ -76,7 +74,19 @@ module.exports = grammar({
       seq(
         optional_with_placeholder("package_declaration_placeholder", $.package_declaration),
         optional_with_placeholder("import_list", repeat($.import_declaration)),
-        optional_with_placeholder("type_declaration_list", repeat($.type_declaration))
+        optional_with_placeholder("type_declaration_list", repeat($.type_declaration)),
+        optional_with_placeholder(
+          "statement_list",
+          repeat(
+            choice(
+              $.statement,
+              $.record_declaration,
+              $.method_declaration,
+              $.static_initializer,
+              $.constructor_declaration
+            )
+          )
+        )
       ),
 
     // Literals
@@ -294,7 +304,7 @@ module.exports = grammar({
       prec.right(
         seq(
           "new",
-          field("type", $._simple_type),
+          $._simple_type,
           choice(
             seq(
               field("dimensions", repeat1($.dimensions_expr)),
@@ -322,7 +332,7 @@ module.exports = grammar({
         seq(
           "new",
           field("type_arguments", optional($.type_arguments)),
-          field("type", $._simple_type),
+          $._simple_type,
           field("arguments", $.argument_list),
           optional($.class_body)
         )
@@ -390,7 +400,8 @@ module.exports = grammar({
 
     statement: ($) =>
       choice(
-        $.declaration,
+        $.module_declaration,
+        $.annotation_type_declaration,
         $.expression_statement,
         $.labeled_statement,
         $.if_statement,
@@ -452,7 +463,10 @@ module.exports = grammar({
             field("catch_list", repeat1($.catch_clause)),
             optional_with_placeholder("finally_placeholder", $.finally_clause)
           ),
-          seq(optional_with_placeholder("catch_list", repeat($.catch_clause)), $.finally_clause)
+          seq(
+            optional_with_placeholder("catch_list_placeholder", repeat($.catch_clause)),
+            $.finally_clause
+          )
         )
       ),
 
@@ -584,18 +598,6 @@ module.exports = grammar({
 
     // Declarations
 
-    declaration: ($) =>
-      prec(
-        PREC.DECL,
-        choice(
-          $.module_declaration,
-          $.package_declaration,
-          $.import_declaration,
-          $.annotation_type_declaration,
-          $.type_declaration
-        )
-      ),
-
     type_declaration: ($) =>
       prec(PREC.DECL, choice($.class_declaration, $.interface_declaration, $.enum_declaration)),
 
@@ -633,6 +635,7 @@ module.exports = grammar({
 
     enum_declaration: ($) =>
       seq(
+        optional_with_placeholder("decorator_list", repeat1($._annotation)),
         optional_with_placeholder("modifiers_placeholder", $.modifiers),
         "enum",
         field("name", $.identifier),
@@ -664,10 +667,11 @@ module.exports = grammar({
 
     class_declaration: ($) =>
       seq(
+        optional_with_placeholder("decorator_list", repeat1($._annotation)),
         optional_with_placeholder("modifiers_placeholder", $.modifiers),
         "class",
         field("name", $.identifier),
-        field("type_parameters", optional($.type_parameters)),
+        optional(field("type_parameters", $.type_parameters)),
         optional_with_placeholder("superclass_placeholder", $.superclass),
         optional_with_placeholder("interfaces_placeholder", $.super_interfaces),
         field("body", $.class_body)
@@ -676,7 +680,6 @@ module.exports = grammar({
     modifiers: ($) =>
       repeat1(
         choice(
-          $._annotation,
           "public",
           "protected",
           "private",
@@ -731,9 +734,10 @@ module.exports = grammar({
 
     constructor_declaration: ($) =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder("decorator_list", repeat1($._annotation)),
+        optional_with_placeholder("modifiers_placeholder", $.modifiers),
         $._constructor_declarator,
-        optional($.throws),
+        optional_with_placeholder("throws_optional", $.throws),
         field("body", $.constructor_body)
       ),
 
@@ -771,7 +775,8 @@ module.exports = grammar({
 
     field_declaration: ($) =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder("decorator_list", repeat1($._annotation)),
+        optional_with_placeholder("modifiers_placeholder", $.modifiers),
         field("type", $._unannotated_type),
         $._variable_declarator_list,
         ";"
@@ -825,6 +830,7 @@ module.exports = grammar({
 
     interface_declaration: ($) =>
       seq(
+        optional_with_placeholder("decorator_list", repeat1($._annotation)),
         optional_with_placeholder("modifiers_placeholder", $.modifiers),
         "interface",
         field("name", $.identifier),
@@ -888,17 +894,21 @@ module.exports = grammar({
     _unannotated_type: ($) => choice($._simple_type, $.array_type),
 
     _simple_type: ($) =>
-      choice(
-        $.void_type,
-        $.integral_type,
-        $.floating_point_type,
-        $.boolean_type,
-        alias($.identifier, $.type_identifier),
-        $.scoped_type_identifier,
-        $.generic_type
+      field(
+        "type",
+        choice(
+          $.void_type,
+          $.integral_type,
+          $.floating_point_type,
+          $.boolean_type,
+          alias($.identifier, $.type_identifier),
+          $.scoped_type_identifier,
+          $.generic_type
+        )
       ),
 
-    annotated_type: ($) => seq(repeat1($._annotation), $._unannotated_type),
+    annotated_type: ($) =>
+      seq(field("type_decorator_list", repeat1($._annotation)), $._unannotated_type),
 
     scoped_type_identifier: ($) =>
       seq(
@@ -918,7 +928,7 @@ module.exports = grammar({
       ),
 
     array_type: ($) =>
-      seq(field("element", $._unannotated_type), field("dimensions", $.dimensions)),
+      field("type", seq(field("element", $._unannotated_type), field("dimensions", $.dimensions))),
 
     integral_type: ($) => choice("byte", "short", "int", "long", "char"),
 
@@ -928,7 +938,7 @@ module.exports = grammar({
 
     void_type: ($) => "void",
 
-    _method_header: ($) =>
+    method_header: ($) =>
       seq(
         optional(
           seq(
@@ -937,22 +947,27 @@ module.exports = grammar({
           )
         ),
         field("type", $._unannotated_type),
-        $._method_declarator,
+        $.method_declarator,
         optional_with_placeholder("throws_placeholder", $.throws)
       ),
 
-    _method_declarator: ($) =>
+    method_declarator: ($) =>
       seq(
         field("name", choice($.identifier, $._reserved_identifier)),
         field("parameters", $.formal_parameters),
-        field("dimensions", optional($.dimensions))
+        optional(field("dimensions", $.dimensions))
       ),
 
     formal_parameters: ($) =>
       seq(
         "(",
-        optional($.receiver_parameter),
-        commaSep(choice($.formal_parameter, $.spread_parameter)),
+        optional_with_placeholder(
+          "parameter_list",
+          seq(
+            optional($.receiver_parameter),
+            commaSep(choice($.formal_parameter, $.spread_parameter))
+          )
+        ),
         ")"
       ),
 
@@ -986,8 +1001,9 @@ module.exports = grammar({
 
     method_declaration: ($) =>
       seq(
+        optional_with_placeholder("decorator_list", repeat1($._annotation)),
         optional_with_placeholder("modifiers_placeholder", $.modifiers),
-        $._method_header,
+        $.method_header,
         choice(field("body", $.block), ";")
       ),
 
