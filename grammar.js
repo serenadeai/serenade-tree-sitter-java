@@ -65,6 +65,9 @@ module.exports = grammar({
     [$.package_declaration, $.modifiers],
     [$.if_statement],
     [$.try_statement],
+    [$.inferred_parameters, $.formal_parameters],
+    [$.lambda_parameter_list, $.primary_expression, $._unannotated_type],
+    [$.lambda_parameters, $.primary_expression],
   ],
 
   word: ($) => $.identifier,
@@ -191,14 +194,14 @@ module.exports = grammar({
         PREC.ASSIGN,
         seq(
           field(
-            "left",
+            "assignment_variable",
             choice($.identifier, $._reserved_identifier, $.field_access, $.array_access)
           ),
           field(
             "operator",
             choice("=", "+=", "-=", "*=", "/=", "&=", "|=", "^=", "%=", "<<=", ">>=", ">>>=")
           ),
-          field("right", $.expression)
+          field("assignment_value", $.expression)
         )
       ),
 
@@ -241,12 +244,18 @@ module.exports = grammar({
 
     lambda_expression: ($) =>
       seq(
-        field("parameters", choice($.identifier, $.formal_parameters, $.inferred_parameters)),
+        $.lambda_parameters,
         "->",
         field("body", choice(field("lambda_return", $.expression), $.block))
       ),
 
-    inferred_parameters: ($) => seq("(", commaSep1($.identifier), ")"),
+    lambda_parameters: ($) =>
+      choice(field("lambda_parameter", $.identifier), $.formal_parameters, $.inferred_parameters),
+
+    inferred_parameters: ($) =>
+      seq("(", optional_with_placeholder("parameter_list", $.lambda_parameter_list), ")"),
+
+    lambda_parameter_list: ($) => commaSep1(field("lambda_parameter", $.identifier)),
 
     ternary_expression: ($) =>
       prec.right(
@@ -333,7 +342,7 @@ module.exports = grammar({
           "new",
           field("type_arguments", optional($.type_arguments)),
           $._simple_type,
-          field("arguments", $.argument_list),
+          $.arguments,
           optional($.class_body)
         )
       ),
@@ -361,10 +370,13 @@ module.exports = grammar({
             field("name", choice($.identifier, $._reserved_identifier))
           )
         ),
-        field("arguments", $.argument_list)
+        $.arguments
       ),
 
-    argument_list: ($) => seq("(", commaSep($.expression), ")"),
+    arguments: ($) =>
+      seq("(", optional_with_placeholder("argument_list", commaSep($.argument)), ")"),
+
+    argument: ($) => $.expression,
 
     method_reference: ($) =>
       seq(
@@ -446,7 +458,15 @@ module.exports = grammar({
 
     continue_statement: ($) => seq("continue", optional($.identifier), ";"),
 
-    return_statement: ($) => seq("return", field("return_value", optional($.expression)), ";"),
+    return_statement: ($) =>
+      seq(
+        "return",
+        optional_with_placeholder(
+          "return_value_optional",
+          optional(field("return_value", $.expression))
+        ),
+        ";"
+      ),
 
     yield_statement: ($) => seq("yield", $.expression, ";"),
 
@@ -505,7 +525,7 @@ module.exports = grammar({
         $.field_access
       ),
 
-    else_clause: ($) => seq("else", $.statement),
+    else_clause: ($) => seq("else", field("consequence", $.statement)),
 
     else_if_clause: ($) =>
       prec(
@@ -661,7 +681,7 @@ module.exports = grammar({
       seq(
         optional($.modifiers),
         field("name", $.identifier),
-        field("arguments", optional($.argument_list)),
+        optional($.arguments),
         field("body", optional($.class_body))
       ),
 
@@ -701,12 +721,15 @@ module.exports = grammar({
 
     type_bound: ($) => seq("extends", $._type, repeat(seq("&", $._type))),
 
-    superclass: ($) => seq("extends", field("extends_type", $._type)),
+    superclass: ($) => seq("extends", $.extends_type),
 
     super_interfaces: ($) => seq("implements", $.interface_type_list),
 
-    interface_type_list: ($) =>
-      seq(field("implements_type", $._type), repeat(seq(",", field("implements_type", $._type)))),
+    interface_type_list: ($) => seq($.implements_type, repeat(seq(",", $.implements_type))),
+
+    extends_type: ($) => $._type,
+
+    implements_type: ($) => $._type,
 
     class_body: ($) =>
       seq(
@@ -765,7 +788,7 @@ module.exports = grammar({
             field("constructor", $.super)
           )
         ),
-        field("arguments", $.argument_list),
+        $.arguments,
         ";"
       ),
 
@@ -778,7 +801,7 @@ module.exports = grammar({
         optional_with_placeholder("decorator_list", repeat1($._annotation)),
         optional_with_placeholder("modifiers_placeholder", $.modifiers),
         field("type", $._unannotated_type),
-        $._variable_declarator_list,
+        $.variable_declarator_list,
         ";"
       ),
 
@@ -841,8 +864,7 @@ module.exports = grammar({
 
     extends_interfaces: ($) => seq("extends", $.extends_type_list),
 
-    extends_type_list: ($) =>
-      seq(field("extends_type", $._type), repeat(seq(",", field("extends_type", $._type)))),
+    extends_type_list: ($) => seq("extends_type", $.extends_type, repeat(seq(",", $.extends_type))),
 
     interface_body: ($) =>
       seq(
@@ -874,14 +896,23 @@ module.exports = grammar({
 
     _variable_declarator_list: ($) => commaSep1(field("declarator", $.variable_declarator)),
 
-    variable_declarator: ($) =>
-      seq($._variable_declarator_id, optional(seq("=", field("value", $._variable_initializer)))),
+    variable_declarator_list: ($) => $._variable_declarator_list,
+
+    variable_declarator: ($) => choice($._variable_declarator_id, $.declarator_assignment),
+
+    declarator_assignment: ($) =>
+      seq(
+        field("assignment_variable", $.variable_declarator_id),
+        seq("=", field("assignment_value", $._variable_initializer))
+      ),
 
     _variable_declarator_id: ($) =>
       seq(
         field("name", choice($.identifier, $._reserved_identifier)),
         field("dimensions", optional($.dimensions))
       ),
+
+    variable_declarator_id: ($) => $._variable_declarator_id,
 
     _variable_initializer: ($) => choice($.expression, $.array_initializer),
 
@@ -989,7 +1020,9 @@ module.exports = grammar({
         field("spread_parameter_variable", $.variable_declarator)
       ),
 
-    throws: ($) => seq("throws", field("throws_type", commaSep1($._type))),
+    throws: ($) => seq("throws", commaSep1($.throws_type)),
+
+    throws_type: ($) => $._type,
 
     local_variable_declaration: ($) =>
       seq(

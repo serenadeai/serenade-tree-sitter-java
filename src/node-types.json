@@ -543,18 +543,38 @@
     }
   },
   {
-    "type": "argument_list",
+    "type": "argument",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
-      "required": false,
+      "multiple": false,
+      "required": true,
       "types": [
         {
           "type": "expression",
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "arguments",
+    "named": true,
+    "fields": {
+      "argument_list": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "argument",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -687,7 +707,17 @@
     "type": "assignment_expression",
     "named": true,
     "fields": {
-      "left": {
+      "assignment_value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      },
+      "assignment_variable": {
         "multiple": false,
         "required": true,
         "types": [
@@ -756,16 +786,6 @@
           {
             "type": "|=",
             "named": false
-          }
-        ]
-      },
-      "right": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "expression",
-            "named": true
           }
         ]
       }
@@ -1323,6 +1343,36 @@
     }
   },
   {
+    "type": "declarator_assignment",
+    "named": true,
+    "fields": {
+      "assignment_value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "array_initializer",
+            "named": true
+          },
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      },
+      "assignment_variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "variable_declarator_id",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "dimensions",
     "named": true,
     "fields": {},
@@ -1458,16 +1508,17 @@
   {
     "type": "else_clause",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "statement",
-          "named": true
-        }
-      ]
+    "fields": {
+      "consequence": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "statement",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1602,16 +1653,6 @@
     "type": "enum_constant",
     "named": true,
     "fields": {
-      "arguments": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "argument_list",
-            "named": true
-          }
-        ]
-      },
       "body": {
         "multiple": false,
         "required": false,
@@ -1634,9 +1675,13 @@
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "arguments",
+          "named": true
+        },
         {
           "type": "modifiers",
           "named": true
@@ -1708,16 +1753,6 @@
     "type": "explicit_constructor_invocation",
     "named": true,
     "fields": {
-      "arguments": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "argument_list",
-            "named": true
-          }
-        ]
-      },
       "constructor": {
         "multiple": false,
         "required": true,
@@ -1752,6 +1787,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "arguments",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -1785,19 +1830,33 @@
     }
   },
   {
+    "type": "extends_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "_type",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "extends_type_list",
     "named": true,
-    "fields": {
-      "extends_type": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_type",
-            "named": true
-          }
-        ]
-      }
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "extends_type",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -1848,16 +1907,6 @@
     "type": "field_declaration",
     "named": true,
     "fields": {
-      "declarator": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "variable_declarator",
-            "named": true
-          }
-        ]
-      },
       "decorator_list": {
         "multiple": true,
         "required": false,
@@ -1892,6 +1941,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "variable_declarator_list",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -2156,6 +2215,21 @@
     }
   },
   {
+    "type": "implements_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "_type",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "import_declaration",
     "named": true,
     "fields": {},
@@ -2181,16 +2255,17 @@
   {
     "type": "inferred_parameters",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        }
-      ]
+    "fields": {
+      "parameter_list": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "lambda_parameter_list",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -2337,17 +2412,16 @@
   {
     "type": "interface_type_list",
     "named": true,
-    "fields": {
-      "implements_type": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "_type",
-            "named": true
-          }
-        ]
-      }
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "implements_type",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -2392,25 +2466,63 @@
             "named": true
           }
         ]
-      },
-      "parameters": {
-        "multiple": false,
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "lambda_parameters",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "lambda_parameter_list",
+    "named": true,
+    "fields": {
+      "lambda_parameter": {
+        "multiple": true,
         "required": true,
         "types": [
           {
-            "type": "formal_parameters",
-            "named": true
-          },
-          {
             "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "inferred_parameters",
             "named": true
           }
         ]
       }
+    }
+  },
+  {
+    "type": "lambda_parameters",
+    "named": true,
+    "fields": {
+      "lambda_parameter": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "formal_parameters",
+          "named": true
+        },
+        {
+          "type": "inferred_parameters",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -2619,16 +2731,6 @@
     "type": "method_invocation",
     "named": true,
     "fields": {
-      "arguments": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "argument_list",
-            "named": true
-          }
-        ]
-      },
       "name": {
         "multiple": false,
         "required": true,
@@ -2665,9 +2767,13 @@
       }
     },
     "children": {
-      "multiple": false,
-      "required": false,
+      "multiple": true,
+      "required": true,
       "types": [
+        {
+          "type": "arguments",
+          "named": true
+        },
         {
           "type": "super",
           "named": true
@@ -2793,16 +2899,6 @@
     "type": "object_creation_expression",
     "named": true,
     "fields": {
-      "arguments": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "argument_list",
-            "named": true
-          }
-        ]
-      },
       "type_arguments": {
         "multiple": false,
         "required": false,
@@ -2820,6 +2916,10 @@
       "types": [
         {
           "type": "_simple_type",
+          "named": true
+        },
+        {
+          "type": "arguments",
           "named": true
         },
         {
@@ -3244,17 +3344,16 @@
   {
     "type": "superclass",
     "named": true,
-    "fields": {
-      "extends_type": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "_type",
-            "named": true
-          }
-        ]
-      }
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "extends_type",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -3443,21 +3542,31 @@
   {
     "type": "throws",
     "named": true,
-    "fields": {
-      "throws_type": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": ",",
-            "named": false
-          },
-          {
-            "type": "_type",
-            "named": true
-          }
-        ]
-      }
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "throws_type",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "throws_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "_type",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -3734,6 +3843,42 @@
       },
       "name": {
         "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "declarator_assignment",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "variable_declarator_id",
+    "named": true,
+    "fields": {
+      "dimensions": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "dimensions",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
         "required": true,
         "types": [
           {
@@ -3741,17 +3886,19 @@
             "named": true
           }
         ]
-      },
-      "value": {
-        "multiple": false,
-        "required": false,
+      }
+    }
+  },
+  {
+    "type": "variable_declarator_list",
+    "named": true,
+    "fields": {
+      "declarator": {
+        "multiple": true,
+        "required": true,
         "types": [
           {
-            "type": "array_initializer",
-            "named": true
-          },
-          {
-            "type": "expression",
+            "type": "variable_declarator",
             "named": true
           }
         ]
@@ -4092,6 +4239,10 @@
   },
   {
     "type": "extends",
+    "named": false
+  },
+  {
+    "type": "extends_type",
     "named": false
   },
   {
