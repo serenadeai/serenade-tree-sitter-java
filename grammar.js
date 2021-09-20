@@ -352,7 +352,9 @@ module.exports = grammar({
 
     argument_list: $ => seq('(', commaSep($.expression), ')'),
 
-    method_reference: $ => seq(
+    method_reference: $ =>
+    
+    seq(
       choice($._type, $.primary_expression, $.super),
       '::',
       optional($.type_arguments),
