@@ -1,5 +1,6 @@
 const DIGITS = token(sep1(/[0-9]+/, /_+/))
 const HEX_DIGITS = token(sep1(/[A-Fa-f0-9]+/, '_'))
+// prettier-ignore
 const PREC = {
   // https://introcs.cs.princeton.edu/java/11precedence/
   COMMENT: 0,      // //  /*  */
@@ -30,10 +31,7 @@ const PREC = {
 module.exports = grammar({
   name: 'java',
 
-  extras: $ => [
-    $.comment,
-    /\s/
-  ],
+  extras: $ => [$.comment, /\s/],
 
   supertypes: $ => [
     $.expression,
@@ -51,12 +49,17 @@ module.exports = grammar({
     $._simple_type,
     $._reserved_identifier,
     $._class_body_declaration,
-    $._variable_initializer
+    $._variable_initializer,
   ],
 
   conflicts: $ => [
     [$.modifiers, $.annotated_type, $.receiver_parameter],
-    [$.modifiers, $.annotated_type, $.module_declaration, $.package_declaration],
+    [
+      $.modifiers,
+      $.annotated_type,
+      $.module_declaration,
+      $.package_declaration,
+    ],
     [$._unannotated_type, $.primary_expression, $.inferred_parameters],
     [$._unannotated_type, $.primary_expression],
     [$._unannotated_type, $.primary_expression, $.scoped_type_identifier],
@@ -484,594 +487,567 @@ module.exports = grammar({
 
     throw_statement: $ => seq('throw', $.expression, ';'),
 
-    try_statement: $ => seq(
-      'try',
-      field('body', $.block),
-      choice(
-        repeat1($.catch_clause),
-        seq(repeat($.catch_clause), $.finally_clause)
-      )
-    ),
+    try_statement: $ =>
+      seq(
+        'try',
+        field('body', $.block),
+        choice(
+          repeat1($.catch_clause),
+          seq(repeat($.catch_clause), $.finally_clause)
+        )
+      ),
 
-    catch_clause: $ => seq(
-      'catch',
-      '(',
-      $.catch_formal_parameter,
-      ')',
-      field('body', $.block)
-    ),
+    catch_clause: $ =>
+      seq('catch', '(', $.catch_formal_parameter, ')', field('body', $.block)),
 
-    catch_formal_parameter: $ => seq(
-      optional($.modifiers),
-      $.catch_type,
-      $._variable_declarator_id
-    ),
+    catch_formal_parameter: $ =>
+      seq(optional($.modifiers), $.catch_type, $._variable_declarator_id),
 
     catch_type: $ => sep1($._unannotated_type, '|'),
 
     finally_clause: $ => seq('finally', $.block),
 
-    try_with_resources_statement: $ => seq(
-      'try',
-      field('resources', $.resource_specification),
-      field('body', $.block),
-      repeat($.catch_clause),
-      optional($.finally_clause)
-    ),
-
-    resource_specification: $ => seq(
-      '(', sep1($.resource, ';'), optional(';'), ')'
-    ),
-
-    resource: $ => choice(
+    try_with_resources_statement: $ =>
       seq(
+        'try',
+        field('resources', $.resource_specification),
+        field('body', $.block),
+        repeat($.catch_clause),
+        optional($.finally_clause)
+      ),
+
+    resource_specification: $ =>
+      seq('(', sep1($.resource, ';'), optional(';'), ')'),
+
+    resource: $ =>
+      choice(
+        seq(
+          optional($.modifiers),
+          field('type', $._unannotated_type),
+          $._variable_declarator_id,
+          '=',
+          field('value', $.expression)
+        ),
+        $.identifier,
+        $.field_access
+      ),
+
+    if_statement: $ =>
+      prec.right(
+        seq(
+          'if',
+          field('condition', $.parenthesized_expression),
+          field('consequence', $.statement),
+          optional(seq('else', field('alternative', $.statement)))
+        )
+      ),
+
+    while_statement: $ =>
+      seq(
+        'while',
+        field('condition', $.parenthesized_expression),
+        field('body', $.statement)
+      ),
+
+    for_statement: $ =>
+      seq(
+        'for',
+        '(',
+        choice(
+          field('init', $.local_variable_declaration),
+          seq(commaSep(field('init', $.expression)), ';')
+        ),
+        field('condition', optional($.expression)),
+        ';',
+        commaSep(field('update', $.expression)),
+        ')',
+        field('body', $.statement)
+      ),
+
+    enhanced_for_statement: $ =>
+      seq(
+        'for',
+        '(',
         optional($.modifiers),
         field('type', $._unannotated_type),
         $._variable_declarator_id,
-        '=',
-        field('value', $.expression)
+        ':',
+        field('value', $.expression),
+        ')',
+        field('body', $.statement)
       ),
-      $.identifier,
-      $.field_access
-    ),
-
-    if_statement: $ => prec.right(seq(
-      'if',
-      field('condition', $.parenthesized_expression),
-      field('consequence', $.statement),
-      optional(seq('else', field('alternative', $.statement)))
-    )),
-
-    while_statement: $ => seq(
-      'while',
-      field('condition', $.parenthesized_expression),
-      field('body', $.statement)
-    ),
-
-    for_statement: $ => seq(
-      'for', '(',
-      choice(
-        field('init', $.local_variable_declaration),
-        seq(
-          commaSep(field('init', $.expression)),
-          ';'
-        )
-      ),
-      field('condition', optional($.expression)), ';',
-      commaSep(field('update', $.expression)), ')',
-      field('body', $.statement)
-    ),
-
-    enhanced_for_statement: $ => seq(
-      'for',
-      '(',
-      optional($.modifiers),
-      field('type', $._unannotated_type),
-      $._variable_declarator_id,
-      ':',
-      field('value', $.expression),
-      ')',
-      field('body', $.statement)
-    ),
 
     // Annotations
 
-    _annotation: $ => choice(
-      $.marker_annotation,
-      $.annotation
-    ),
+    _annotation: $ => choice($.marker_annotation, $.annotation),
 
-    marker_annotation: $ => seq(
-      '@',
-      field('name', $._name)
-    ),
+    marker_annotation: $ => seq('@', field('name', $._name)),
 
-    annotation: $ => seq(
-      '@',
-      field('name', $._name),
-      field('arguments', $.annotation_argument_list)
-    ),
-
-    annotation_argument_list: $ => seq(
-      '(',
-      choice(
-        $._element_value,
-        commaSep($.element_value_pair),
+    annotation: $ =>
+      seq(
+        '@',
+        field('name', $._name),
+        field('arguments', $.annotation_argument_list)
       ),
-      ')'
-    ),
 
-    element_value_pair: $ => seq(
-      field('key', $.identifier),
-      '=',
-      field('value', $._element_value)
-    ),
+    annotation_argument_list: $ =>
+      seq('(', choice($._element_value, commaSep($.element_value_pair)), ')'),
 
-    _element_value: $ => prec(PREC.ELEMENT_VAL, choice(
-      $.expression,
-      $.element_value_array_initializer,
-      $._annotation
-    )),
+    element_value_pair: $ =>
+      seq(field('key', $.identifier), '=', field('value', $._element_value)),
 
-    element_value_array_initializer: $ => seq(
-      '{',
-      commaSep($._element_value),
-      optional(','),
-      '}'
-    ),
+    _element_value: $ =>
+      prec(
+        PREC.ELEMENT_VAL,
+        choice($.expression, $.element_value_array_initializer, $._annotation)
+      ),
+
+    element_value_array_initializer: $ =>
+      seq('{', commaSep($._element_value), optional(','), '}'),
 
     // Declarations
 
-    declaration: $ => prec(PREC.DECL, choice(
-      $.module_declaration,
-      $.package_declaration,
-      $.import_declaration,
-      $.class_declaration,
-      $.interface_declaration,
-      $.annotation_type_declaration,
-      $.enum_declaration,
-    )),
+    declaration: $ =>
+      prec(
+        PREC.DECL,
+        choice(
+          $.module_declaration,
+          $.package_declaration,
+          $.import_declaration,
+          $.class_declaration,
+          $.interface_declaration,
+          $.annotation_type_declaration,
+          $.enum_declaration
+        )
+      ),
 
-    module_declaration: $ => seq(
-      repeat($._annotation),
-      optional('open'),
-      'module',
-      field('name', $._name),
-      field('body', $.module_body)
-    ),
+    module_declaration: $ =>
+      seq(
+        repeat($._annotation),
+        optional('open'),
+        'module',
+        field('name', $._name),
+        field('body', $.module_body)
+      ),
 
-    module_body: $ => seq(
-      '{',
-      repeat($.module_directive),
-      '}'
-    ),
+    module_body: $ => seq('{', repeat($.module_directive), '}'),
 
-    module_directive: $ => seq(choice(
-      seq('requires', repeat($.requires_modifier), $._name),
-      seq('exports', $._name, optional('to'), optional($._name), repeat(seq(',', $._name))),
-      seq('opens', $._name, optional('to'), optional($._name), repeat(seq(',', $._name))),
-      seq('uses', $._name),
-      seq('provides', $._name, 'with', $._name, repeat(seq(',', $._name)))
-    ), ';'),
+    module_directive: $ =>
+      seq(
+        choice(
+          seq('requires', repeat($.requires_modifier), $._name),
+          seq(
+            'exports',
+            $._name,
+            optional('to'),
+            optional($._name),
+            repeat(seq(',', $._name))
+          ),
+          seq(
+            'opens',
+            $._name,
+            optional('to'),
+            optional($._name),
+            repeat(seq(',', $._name))
+          ),
+          seq('uses', $._name),
+          seq('provides', $._name, 'with', $._name, repeat(seq(',', $._name)))
+        ),
+        ';'
+      ),
 
-    requires_modifier: $ => choice(
-      'transitive',
-      'static'
-    ),
+    requires_modifier: $ => choice('transitive', 'static'),
 
-    package_declaration: $ => seq(
-      repeat($._annotation),
-      'package',
-      $._name,
-      ';'
-    ),
+    package_declaration: $ =>
+      seq(repeat($._annotation), 'package', $._name, ';'),
 
-    import_declaration: $ => seq(
-      'import',
-      optional('static'),
-      $._name,
-      optional(seq('.', $.asterisk)),
-      ';'
-    ),
+    import_declaration: $ =>
+      seq(
+        'import',
+        optional('static'),
+        $._name,
+        optional(seq('.', $.asterisk)),
+        ';'
+      ),
 
     asterisk: $ => '*',
 
-    enum_declaration: $ => seq(
-      optional($.modifiers),
-      'enum',
-      field('name', $.identifier),
-      field('interfaces', optional($.super_interfaces)),
-      field('body', $.enum_body)
-    ),
+    enum_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        'enum',
+        field('name', $.identifier),
+        field('interfaces', optional($.super_interfaces)),
+        field('body', $.enum_body)
+      ),
 
-    enum_body: $ => seq(
-      '{',
-      commaSep($.enum_constant),
-      optional(','),
-      optional($.enum_body_declarations),
-      '}'
-    ),
+    enum_body: $ =>
+      seq(
+        '{',
+        commaSep($.enum_constant),
+        optional(','),
+        optional($.enum_body_declarations),
+        '}'
+      ),
 
-    enum_body_declarations: $ => seq(
-      ';',
-      repeat($._class_body_declaration)
-    ),
+    enum_body_declarations: $ => seq(';', repeat($._class_body_declaration)),
 
-    enum_constant: $ => (seq(
-      optional($.modifiers),
-      field('name', $.identifier),
-      field('arguments', optional($.argument_list)),
-      field('body', optional($.class_body))
-    )),
+    enum_constant: $ =>
+      seq(
+        optional($.modifiers),
+        field('name', $.identifier),
+        field('arguments', optional($.argument_list)),
+        field('body', optional($.class_body))
+      ),
 
-    class_declaration: $ => seq(
-      optional($.modifiers),
-      'class',
-      field('name', $.identifier),
-      optional(field('type_parameters', $.type_parameters)),
-      optional(field('superclass', $.superclass)),
-      optional(field('interfaces', $.super_interfaces)),
-      field('body', $.class_body)
-    ),
+    class_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        'class',
+        field('name', $.identifier),
+        optional(field('type_parameters', $.type_parameters)),
+        optional(field('superclass', $.superclass)),
+        optional(field('interfaces', $.super_interfaces)),
+        field('body', $.class_body)
+      ),
 
-    modifiers: $ => repeat1(choice(
-      $._annotation,
-      'public',
-      'protected',
-      'private',
-      'abstract',
-      'static',
-      'final',
-      'strictfp',
-      'default',
-      'synchronized',
-      'native',
-      'transient',
-      'volatile'
-    )),
+    modifiers: $ =>
+      repeat1(
+        choice(
+          $._annotation,
+          'public',
+          'protected',
+          'private',
+          'abstract',
+          'static',
+          'final',
+          'strictfp',
+          'default',
+          'synchronized',
+          'native',
+          'transient',
+          'volatile'
+        )
+      ),
 
-    type_parameters: $ => seq(
-      '<', commaSep1($.type_parameter), '>'
-    ),
+    type_parameters: $ => seq('<', commaSep1($.type_parameter), '>'),
 
-    type_parameter: $ => seq(
-      repeat($._annotation),
-      $.identifier,
-      optional($.type_bound)
-    ),
+    type_parameter: $ =>
+      seq(repeat($._annotation), $.identifier, optional($.type_bound)),
 
     type_bound: $ => seq('extends', $._type, repeat(seq('&', $._type))),
 
-    superclass: $ => seq(
-      'extends',
-      $._type
-    ),
+    superclass: $ => seq('extends', $._type),
 
-    super_interfaces: $ => seq(
-      'implements',
-      $.interface_type_list
-    ),
+    super_interfaces: $ => seq('implements', $.interface_type_list),
 
-    interface_type_list: $ => seq(
-      $._type,
-      repeat(seq(',', $._type))
-    ),
+    interface_type_list: $ => seq($._type, repeat(seq(',', $._type))),
 
-    class_body: $ => seq(
-      '{',
-      repeat($._class_body_declaration),
-      '}'
-    ),
+    class_body: $ => seq('{', repeat($._class_body_declaration), '}'),
 
-    _class_body_declaration: $ => choice(
-      $.field_declaration,
-      $.record_declaration,
-      $.method_declaration,
-      $.class_declaration,
-      $.interface_declaration,
-      $.annotation_type_declaration,
-      $.enum_declaration,
-      $.block,
-      $.static_initializer,
-      $.constructor_declaration,
-      ';'
-    ),
-
-    static_initializer: $ => seq(
-      'static',
-      $.block
-    ),
-
-    constructor_declaration: $ => seq(
-      optional($.modifiers),
-      $._constructor_declarator,
-      optional($.throws),
-      field('body', $.constructor_body)
-    ),
-
-    _constructor_declarator: $ => seq(
-      field('type_parameters', optional($.type_parameters)),
-      field('name', $.identifier),
-      field('parameters', $.formal_parameters)
-    ),
-
-    constructor_body: $ => seq(
-      '{',
-      optional($.explicit_constructor_invocation),
-      repeat($.statement),
-      '}'
-    ),
-
-    explicit_constructor_invocation: $ => seq(
+    _class_body_declaration: $ =>
       choice(
-        seq(
-          field('type_arguments', optional($.type_arguments)),
-          field('constructor', choice($.this, $.super)),
-        ),
-        seq(
-          field('object', choice($.primary_expression)),
-          '.',
-          field('type_arguments', optional($.type_arguments)),
-          field('constructor', $.super),
-        )
-      ),
-      field('arguments', $.argument_list),
-      ';'
-    ),
-
-    _name: $ => choice(
-      $.identifier,
-      $._reserved_identifier,
-      $.scoped_identifier
-    ),
-
-    scoped_identifier: $ => seq(
-      field('scope', $._name),
-      '.',
-      field('name', $.identifier)
-    ),
-
-    field_declaration: $ => seq(
-      optional($.modifiers),
-      field('type', $._unannotated_type),
-      $._variable_declarator_list,
-      ';'
-    ),
-
-    record_declaration: $ => seq(
-      optional($.modifiers),
-      'record',
-      field('name', $.identifier),
-      field('parameters', $.formal_parameters),
-      field('body', $.class_body) 
-    ),
-
-    annotation_type_declaration: $ => seq(
-      optional($.modifiers),
-      '@interface',
-      field('name', $.identifier),
-      field('body', $.annotation_type_body)
-    ),
-
-    annotation_type_body: $ => seq(
-      '{', repeat(choice(
-        $.annotation_type_element_declaration,
-        $.constant_declaration,
-        $.class_declaration,
-        $.interface_declaration,
-        $.annotation_type_declaration
-      )),
-      '}'
-    ),
-
-    annotation_type_element_declaration: $ => seq(
-      optional($.modifiers),
-      field('type', $._unannotated_type),
-      field('name', $.identifier),
-      '(', ')',
-      field('dimensions', optional($.dimensions)),
-      optional($._default_value),
-      ';'
-    ),
-
-    _default_value: $ => seq(
-      'default',
-      field('value', $._element_value)
-    ),
-
-    interface_declaration: $ => seq(
-      optional($.modifiers),
-      'interface',
-      field('name', $.identifier),
-      field('type_parameters', optional($.type_parameters)),
-      optional($.extends_interfaces),
-      field('body', $.interface_body)
-    ),
-
-    extends_interfaces: $ => seq(
-      'extends',
-      $.interface_type_list
-    ),
-
-    interface_body: $ => seq(
-      '{',
-      repeat(choice(
-        $.constant_declaration,
-        $.enum_declaration,
+        $.field_declaration,
+        $.record_declaration,
         $.method_declaration,
         $.class_declaration,
         $.interface_declaration,
         $.annotation_type_declaration,
+        $.enum_declaration,
+        $.block,
+        $.static_initializer,
+        $.constructor_declaration,
         ';'
-      )),
-      '}'
-    ),
+      ),
 
-    constant_declaration: $ => seq(
-      optional($.modifiers),
-      field('type', $._unannotated_type),
-      $._variable_declarator_list,
-      ';'
-    ),
+    static_initializer: $ => seq('static', $.block),
 
-    _variable_declarator_list: $ => commaSep1(
-      field('declarator', $.variable_declarator)
-    ),
+    constructor_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        $._constructor_declarator,
+        optional($.throws),
+        field('body', $.constructor_body)
+      ),
 
-    variable_declarator: $ => seq(
-      $._variable_declarator_id,
-      optional(seq('=', field('value', $._variable_initializer)))
-    ),
+    _constructor_declarator: $ =>
+      seq(
+        field('type_parameters', optional($.type_parameters)),
+        field('name', $.identifier),
+        field('parameters', $.formal_parameters)
+      ),
 
-    _variable_declarator_id: $ => seq(
-      field('name', choice($.identifier, $._reserved_identifier)),
-      field('dimensions', optional($.dimensions))
-    ),
+    constructor_body: $ =>
+      seq(
+        '{',
+        optional($.explicit_constructor_invocation),
+        repeat($.statement),
+        '}'
+      ),
 
-    _variable_initializer: $ => choice(
-      $.expression,
-      $.array_initializer
-    ),
+    explicit_constructor_invocation: $ =>
+      seq(
+        choice(
+          seq(
+            field('type_arguments', optional($.type_arguments)),
+            field('constructor', choice($.this, $.super))
+          ),
+          seq(
+            field('object', choice($.primary_expression)),
+            '.',
+            field('type_arguments', optional($.type_arguments)),
+            field('constructor', $.super)
+          )
+        ),
+        field('arguments', $.argument_list),
+        ';'
+      ),
 
-    array_initializer: $ => seq(
-      '{',
-      commaSep($._variable_initializer),
-      optional(','),
-      '}'
-    ),
+    _name: $ =>
+      choice($.identifier, $._reserved_identifier, $.scoped_identifier),
+
+    scoped_identifier: $ =>
+      seq(field('scope', $._name), '.', field('name', $.identifier)),
+
+    field_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        field('type', $._unannotated_type),
+        $._variable_declarator_list,
+        ';'
+      ),
+
+    record_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        'record',
+        field('name', $.identifier),
+        field('parameters', $.formal_parameters),
+        field('body', $.class_body)
+      field('body', $.class_body) 
+        field('body', $.class_body)
+      ),
+
+    annotation_type_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        '@interface',
+        field('name', $.identifier),
+        field('body', $.annotation_type_body)
+      ),
+
+    annotation_type_body: $ =>
+      seq(
+        '{',
+        repeat(
+          choice(
+            $.annotation_type_element_declaration,
+            $.constant_declaration,
+            $.class_declaration,
+            $.interface_declaration,
+            $.annotation_type_declaration
+          )
+        ),
+        '}'
+      ),
+
+    annotation_type_element_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        field('type', $._unannotated_type),
+        field('name', $.identifier),
+        '(',
+        ')',
+        field('dimensions', optional($.dimensions)),
+        optional($._default_value),
+        ';'
+      ),
+
+    _default_value: $ => seq('default', field('value', $._element_value)),
+
+    interface_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        'interface',
+        field('name', $.identifier),
+        field('type_parameters', optional($.type_parameters)),
+        optional($.extends_interfaces),
+        field('body', $.interface_body)
+      ),
+
+    extends_interfaces: $ => seq('extends', $.interface_type_list),
+
+    interface_body: $ =>
+      seq(
+        '{',
+        repeat(
+          choice(
+            $.constant_declaration,
+            $.enum_declaration,
+            $.method_declaration,
+            $.class_declaration,
+            $.interface_declaration,
+            $.annotation_type_declaration,
+            ';'
+          )
+        ),
+        '}'
+      ),
+
+    constant_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        field('type', $._unannotated_type),
+        $._variable_declarator_list,
+        ';'
+      ),
+
+    _variable_declarator_list: $ =>
+      commaSep1(field('declarator', $.variable_declarator)),
+
+    variable_declarator: $ =>
+      seq(
+        $._variable_declarator_id,
+        optional(seq('=', field('value', $._variable_initializer)))
+      ),
+
+    _variable_declarator_id: $ =>
+      seq(
+        field('name', choice($.identifier, $._reserved_identifier)),
+        field('dimensions', optional($.dimensions))
+      ),
+
+    _variable_initializer: $ => choice($.expression, $.array_initializer),
+
+    array_initializer: $ =>
+      seq('{', commaSep($._variable_initializer), optional(','), '}'),
 
     // Types
 
-    _type: $ => choice(
-      $._unannotated_type,
-      $.annotated_type
-    ),
+    _type: $ => choice($._unannotated_type, $.annotated_type),
 
-    _unannotated_type: $ => choice(
-      $._simple_type,
-      $.array_type
-    ),
+    _unannotated_type: $ => choice($._simple_type, $.array_type),
 
-    _simple_type: $ => choice(
-      $.void_type,
-      $.integral_type,
-      $.floating_point_type,
-      $.boolean_type,
-      alias($.identifier, $.type_identifier),
-      $.scoped_type_identifier,
-      $.generic_type
-    ),
-
-    annotated_type: $ => seq(
-      repeat1($._annotation),
-      $._unannotated_type
-    ),
-
-    scoped_type_identifier: $ => seq(
+    _simple_type: $ =>
       choice(
+        $.void_type,
+        $.integral_type,
+        $.floating_point_type,
+        $.boolean_type,
         alias($.identifier, $.type_identifier),
         $.scoped_type_identifier,
         $.generic_type
       ),
-      '.',
-      repeat($._annotation),
-      alias($.identifier, $.type_identifier)
-    ),
 
-    generic_type: $ => prec.dynamic(PREC.GENERIC, seq(
-      choice(
-        alias($.identifier, $.type_identifier),
-        $.scoped_type_identifier
+    annotated_type: $ => seq(repeat1($._annotation), $._unannotated_type),
+
+    scoped_type_identifier: $ =>
+      seq(
+        choice(
+          alias($.identifier, $.type_identifier),
+          $.scoped_type_identifier,
+          $.generic_type
+        ),
+        '.',
+        repeat($._annotation),
+        alias($.identifier, $.type_identifier)
       ),
-      $.type_arguments
-    )),
 
-    array_type: $ => seq(
-      field('element', $._unannotated_type),
-      field('dimensions', $.dimensions)
-    ),
+    generic_type: $ =>
+      prec.dynamic(
+        PREC.GENERIC,
+        seq(
+          choice(
+            alias($.identifier, $.type_identifier),
+            $.scoped_type_identifier
+          ),
+          $.type_arguments
+        )
+      ),
 
-    integral_type: $ => choice(
-      'byte',
-      'short',
-      'int',
-      'long',
-      'char'
-    ),
+    array_type: $ =>
+      seq(
+        field('element', $._unannotated_type),
+        field('dimensions', $.dimensions)
+      ),
 
-    floating_point_type: $ => choice(
-      'float',
-      'double'
-    ),
+    integral_type: $ => choice('byte', 'short', 'int', 'long', 'char'),
+
+    floating_point_type: $ => choice('float', 'double'),
 
     boolean_type: $ => 'boolean',
 
     void_type: $ => 'void',
 
-    _method_header: $ => seq(
-      optional(seq(
-        field('type_parameters', $.type_parameters),
-        repeat($._annotation)
-      )),
-      field('type', $._unannotated_type),
-      $._method_declarator,
-      optional($.throws)
-    ),
+    _method_header: $ =>
+      seq(
+        optional(
+          seq(
+            field('type_parameters', $.type_parameters),
+            repeat($._annotation)
+          )
+        ),
+        field('type', $._unannotated_type),
+        $._method_declarator,
+        optional($.throws)
+      ),
 
-    _method_declarator: $ => seq(
-      field('name', choice($.identifier, $._reserved_identifier)),
-      field('parameters', $.formal_parameters),
-      field('dimensions', optional($.dimensions))
-    ),
+    _method_declarator: $ =>
+      seq(
+        field('name', choice($.identifier, $._reserved_identifier)),
+        field('parameters', $.formal_parameters),
+        field('dimensions', optional($.dimensions))
+      ),
 
-    formal_parameters: $ => seq(
-      '(',
-      optional($.receiver_parameter),
-      commaSep(choice($.formal_parameter, $.spread_parameter)),
-      ')'
-    ),
+    formal_parameters: $ =>
+      seq(
+        '(',
+        optional($.receiver_parameter),
+        commaSep(choice($.formal_parameter, $.spread_parameter)),
+        ')'
+      ),
 
-    formal_parameter: $ => seq(
-      optional($.modifiers),
-      field('type', $._unannotated_type),
-      $._variable_declarator_id
-    ),
+    formal_parameter: $ =>
+      seq(
+        optional($.modifiers),
+        field('type', $._unannotated_type),
+        $._variable_declarator_id
+      ),
 
-    receiver_parameter: $ => seq(
-      repeat($._annotation),
-      $._unannotated_type,
-      optional(seq($.identifier, '.')),
-      $.this
-    ),
+    receiver_parameter: $ =>
+      seq(
+        repeat($._annotation),
+        $._unannotated_type,
+        optional(seq($.identifier, '.')),
+        $.this
+      ),
 
-    spread_parameter: $ => seq(
-      optional($.modifiers),
-      $._unannotated_type,
-      '...',
-      $.variable_declarator
-    ),
+    spread_parameter: $ =>
+      seq(
+        optional($.modifiers),
+        $._unannotated_type,
+        '...',
+        $.variable_declarator
+      ),
 
-    throws: $ => seq(
-      'throws', commaSep1($._type)
-    ),
+    throws: $ => seq('throws', commaSep1($._type)),
 
-    local_variable_declaration: $ => seq(
-      optional($.modifiers),
-      field('type', $._unannotated_type),
-      $._variable_declarator_list,
-      ';'
-    ),
+    local_variable_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        field('type', $._unannotated_type),
+        $._variable_declarator_list,
+        ';'
+      ),
 
-    method_declaration: $ => seq(
-      optional($.modifiers),
-      $._method_header,
-      choice(field('body', $.block), ';')
-    ),
+    method_declaration: $ =>
+      seq(
+        optional($.modifiers),
+        $._method_header,
+        choice(field('body', $.block), ';')
+      ),
 
-    _reserved_identifier: $ => alias(choice(
-      'open',
-      'module'
-    ), $.identifier),
+    _reserved_identifier: $ => alias(choice('open', 'module'), $.identifier),
 
     this: $ => 'this',
 
@@ -1081,19 +1057,18 @@ module.exports = grammar({
     identifier: $ => /[\p{L}_$][\p{L}\p{Nd}_$]*/,
 
     // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
-    comment: $ => token(prec(PREC.COMMENT, choice(
-      seq('//', /.*/),
-      seq(
-        '/*',
-        /[^*]*\*+([^/*][^*]*\*+)*/,
-        '/'
-      )
-    ))),
-  }
-});
+    comment: $ =>
+      token(
+        prec(
+          PREC.COMMENT,
+          choice(seq('//', /.*/), seq('/*', /[^*]*\*+([^/*][^*]*\*+)*/, '/'))
+        )
+      ),
+  },
+})
 
-function sep1 (rule, separator) {
-  return seq(rule, repeat(seq(separator, rule)));
+function sep1(rule, separator) {
+  return seq(rule, repeat(seq(separator, rule)))
 }
 
 function commaSep1(rule) {
