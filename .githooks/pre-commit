@@ -1,0 +1,12 @@
+#!/bin/bash
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$HERE/../"
+
+# format only changed files
+changed=$(git diff --cached --name-only --diff-filter=ACMR "*.java" "*.ts" "*.scss")
+for f in ${changed[@]} ; do
+    echo "Formatting $f..."
+    prettier --write "$f" &>/dev/null
+    git add "$f"
+done
