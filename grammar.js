@@ -615,6 +615,7 @@ module.exports = grammar({
 
     catch_parameter: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         $.catch_type,
         $._variable_declarator_id
@@ -639,6 +640,7 @@ module.exports = grammar({
     resource: $ =>
       choice(
         seq(
+          optional_with_placeholder('decorator_list', repeat($.annotation_)),
           optional_with_placeholder('modifier_list', repeat($.modifier)),
           field('type_optional', $.unannotated_type),
           $._variable_declarator_id,
@@ -721,12 +723,12 @@ module.exports = grammar({
         field('for_body', $.statement)
       ),
 
-    block_iterator: $ =>
-      seq(
-        optional_with_placeholder('modifier_list', repeat($.modifier)),
-        field('type_optional', $.unannotated_type),
-        $._variable_declarator_id
-      ),
+    block_iterator: $ => $.formal_parameter,
+    // seq(
+    //   optional_with_placeholder('modifier_list', repeat($.modifier)),
+    //   field('type_optional', $.unannotated_type),
+    //   $._variable_declarator_id
+    // ),
 
     // Annotations
 
@@ -832,9 +834,11 @@ module.exports = grammar({
         '{',
         optional_with_placeholder(
           'enum_member_list',
-          commaSep($.enum_constant),
-          optional(','),
-          optional($.enum_body_declarations)
+          seq(
+            commaSep($.enum_constant),
+            optional(','),
+            optional($.enum_body_declarations)
+          )
         ),
         '}'
       ),
@@ -843,6 +847,7 @@ module.exports = grammar({
 
     enum_constant: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('name', $.identifier),
         optional($.arguments),
@@ -989,6 +994,7 @@ module.exports = grammar({
 
     record_declaration: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         'record',
         field('name', $.identifier),
@@ -998,6 +1004,7 @@ module.exports = grammar({
 
     annotation_type_declaration: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         '@interface',
         field('name', $.identifier),
@@ -1021,6 +1028,7 @@ module.exports = grammar({
 
     annotation_type_element_declaration: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
         field('name', $.identifier),
@@ -1074,6 +1082,7 @@ module.exports = grammar({
 
     constant_declaration: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
         $._variable_declarator_list,
@@ -1203,7 +1212,14 @@ module.exports = grammar({
     formal_parameters: $ =>
       seq(
         '(',
-        optional_with_placeholder('parameter_list', $.parameter_list),
+        optional_with_placeholder(
+          'parameter_list',
+          // seq(
+          //   optional($.receiver_parameter),
+          //   commaSep($.parameter)
+          // )),
+          $.parameter_list
+        ),
         ')'
       ),
 
@@ -1217,6 +1233,7 @@ module.exports = grammar({
 
     formal_parameter: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
         $._variable_declarator_id
@@ -1232,6 +1249,7 @@ module.exports = grammar({
 
     spread_parameter: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
         '...',
@@ -1244,6 +1262,7 @@ module.exports = grammar({
 
     local_variable_declaration: $ =>
       seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
         $._variable_declarator_list,
