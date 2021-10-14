@@ -213,7 +213,7 @@ module.exports = grammar({
 
     expression: $ =>
       choice(
-        $.assignment,
+        $.assignment_,
         $.binary_expression,
         $.instanceof_expression,
         $.lambda,
@@ -236,7 +236,7 @@ module.exports = grammar({
         )
       ),
 
-    assignment: $ =>
+    assignment_: $ =>
       prec.right(
         PREC.ASSIGN,
         seq(
@@ -427,10 +427,10 @@ module.exports = grammar({
       prec.right(
         seq(
           'new',
-          field('type_arguments', optional($.type_arguments)),
+          optional($.type_arguments),
           $._simple_type,
           $.arguments,
-          optional(field('brace_enclosed_body', $.class_body))
+          optional_with_placeholder('brace_enclosed_body', $.class_body)
         )
       ),
 
@@ -535,7 +535,7 @@ module.exports = grammar({
         $.yield_statement,
         $.switch_expression, //switch statements and expressions are identical
         $.synchronized_statement,
-        field('assignment', $.local_variable_declaration),
+        field('variable_declaration', $.local_variable_declaration),
         $.throw,
         $.try,
         $.try_with_resources_statement
@@ -573,12 +573,14 @@ module.exports = grammar({
 
     continue_statement: $ => seq('continue', optional($.identifier), ';'),
 
+    // return_value: $ => $.expression,
+
     return: $ =>
       seq(
         'return',
         optional_with_placeholder(
           'return_value_optional',
-          optional(field('return_value', $.expression))
+          alias($.expression, $.return_value)
         ),
         ';'
       ),
@@ -860,7 +862,7 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         'class',
         field('name', $.identifier),
-        optional(field('type_parameter_list', $.type_parameter_list)),
+        optional($.type_parameter_list),
         optional_with_placeholder('extends_optional', $.superclass),
         optional_with_placeholder(
           'implements_list_optional',
@@ -954,23 +956,32 @@ module.exports = grammar({
     constructor_body: $ =>
       seq(
         '{',
-        optional($.explicit_constructor_invocation),
-        repeat($.statement),
+
+        optional_with_placeholder(
+          'statement_list',
+          seq(
+            optional($.wrapped_explicit_constructor_invocation),
+            repeat($.statement)
+          )
+        ),
         '}'
       ),
+
+    wrapped_explicit_constructor_invocation: $ =>
+      field('statement', $.explicit_constructor_invocation),
 
     explicit_constructor_invocation: $ =>
       seq(
         choice(
           seq(
             field('type_arguments', optional($.type_arguments)),
-            field('constructor', choice($.this, $.super))
+            field('constructor_', choice($.this, $.super))
           ),
           seq(
             field('object', choice($.primary_expression)),
             '.',
             field('type_arguments', optional($.type_arguments)),
-            field('constructor', $.super)
+            field('constructor_', $.super)
           )
         ),
         $.arguments,
@@ -988,7 +999,7 @@ module.exports = grammar({
         optional_with_placeholder('decorator_list', repeat1($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
-        $.variable_declarator_list,
+        $.assignment_list,
         ';'
       ),
 
@@ -1090,15 +1101,26 @@ module.exports = grammar({
       ),
 
     _variable_declarator_list: $ =>
-      commaSep1(field('declarator', $.variable_declarator)),
+      commaSep1(field('assignment', $.variable_declarator)),
 
-    variable_declarator_list: $ => $._variable_declarator_list,
+    assignment_list: $ => $._variable_declarator_list,
 
     variable_declarator: $ =>
-      field(
-        'assignment',
-        choice($._variable_declarator_id, $.declarator_assignment)
+      choice(
+        seq(
+          $._variable_declarator_id,
+          optional_with_placeholder(
+            'assignment_value_list_optional',
+            '!!UNMATCHABLE_ba93e422'
+          )
+        ),
+        $.declarator_assignment
       ),
+    // field(
+    //   'assignment',
+    //   choice(, )
+
+    // ),
 
     declarator_assignment: $ =>
       seq(
@@ -1110,9 +1132,11 @@ module.exports = grammar({
       seq(
         field(
           'assignment_variable',
-          choice($.identifier, $._reserved_identifier)
-        ),
-        field('dimensions', optional($.dimensions))
+          seq(
+            choice($.identifier, $._reserved_identifier),
+            optional($.dimensions)
+          )
+        )
       ),
 
     variable_declarator_id: $ => $._variable_declarator_id,
@@ -1265,7 +1289,7 @@ module.exports = grammar({
         optional_with_placeholder('decorator_list', repeat($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('type_optional', $.unannotated_type),
-        $._variable_declarator_list,
+        $.assignment_list,
         ';'
       ),
 
