@@ -395,14 +395,8 @@ module.exports = grammar({
           'new',
           $._simple_type,
           choice(
-            seq(
-              field('dimensions', repeat1($.dimensions_expr)),
-              field('dimensions', optional($.dimensions))
-            ),
-            seq(
-              field('dimensions', $.dimensions),
-              field('value', $.array_initializer)
-            )
+            seq(repeat1($.dimensions_expr), optional($.dimensions)),
+            seq($.dimensions, field('value', $.array_initializer))
           )
         )
       ),
@@ -853,7 +847,7 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('name', $.identifier),
         optional($.arguments),
-        field('brace_enclosed_body', optional($.class_body))
+        optional(field('brace_enclosed_body', $.class_body))
       ),
 
     class: $ =>
@@ -948,7 +942,7 @@ module.exports = grammar({
 
     _constructor_declarator: $ =>
       seq(
-        field('type_parameter_list', optional($.type_parameter_list)),
+        optional_with_placeholder('type_parameter_list', $.type_parameter_list),
         field('name', $.identifier),
         field('parameters', $.formal_parameters)
       ),
@@ -974,13 +968,13 @@ module.exports = grammar({
       seq(
         choice(
           seq(
-            field('type_arguments', optional($.type_arguments)),
+            optional($.type_arguments),
             field('constructor_', choice($.this, $.super))
           ),
           seq(
             field('object', choice($.primary_expression)),
             '.',
-            field('type_arguments', optional($.type_arguments)),
+            optional($.type_arguments),
             field('constructor_', $.super)
           )
         ),
@@ -1045,7 +1039,7 @@ module.exports = grammar({
         field('name', $.identifier),
         '(',
         ')',
-        field('dimensions', optional($.dimensions)),
+        optional($.dimensions),
         optional($._default_value),
         ';'
       ),
@@ -1058,7 +1052,7 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         'interface',
         field('name', $.identifier),
-        field('type_parameter_list', optional($.type_parameter_list)),
+        optional_with_placeholder('type_parameter_list', $.type_parameter_list),
         optional_with_placeholder(
           'extends_list_optional',
           $.extends_interfaces
@@ -1200,8 +1194,8 @@ module.exports = grammar({
       field(
         'type',
         seq(
-          field('element', $.unannotated_type),
-          field('dimensions', $.dimensions)
+          $.unannotated_type, // element
+          $.dimensions // dimensions
         )
       ),
 
@@ -1301,7 +1295,8 @@ module.exports = grammar({
         choice(field('body', $.brace_enclosed_body), ';')
       ),
 
-    _reserved_identifier: $ => alias(choice('open', 'module'), $.identifier),
+    reserved_identifiers: $ => choice('open', 'module'),
+    _reserved_identifier: $ => alias($.reserved_identifiers, $.identifier),
 
     this: $ => 'this',
 
