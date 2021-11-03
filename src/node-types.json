@@ -209,7 +209,7 @@
     "type": "annotation",
     "named": true,
     "fields": {
-      "decorator_value": {
+      "decorator_expression": {
         "multiple": false,
         "required": true,
         "types": [
@@ -866,22 +866,6 @@
     }
   },
   {
-    "type": "brace_enclosed_body",
-    "named": true,
-    "fields": {
-      "statement_list": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "statement",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "break_statement",
     "named": true,
     "fields": {},
@@ -980,7 +964,7 @@
         "required": true,
         "types": [
           {
-            "type": "brace_enclosed_body",
+            "type": "enclosed_body",
             "named": true
           }
         ]
@@ -1066,22 +1050,22 @@
     "type": "class",
     "named": true,
     "fields": {
-      "brace_enclosed_body": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "class_body",
-            "named": true
-          }
-        ]
-      },
       "decorator_list": {
         "multiple": true,
         "required": false,
         "types": [
           {
             "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "class_body",
             "named": true
           }
         ]
@@ -1147,6 +1131,22 @@
         "required": false,
         "types": [
           {
+            "type": "class_body_declaration",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "class_body_declaration",
+    "named": true,
+    "fields": {
+      "member": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
             "type": ";",
             "named": false
           },
@@ -1155,15 +1155,15 @@
             "named": true
           },
           {
-            "type": "brace_enclosed_body",
-            "named": true
-          },
-          {
             "type": "class",
             "named": true
           },
           {
             "type": "constructor",
+            "named": true
+          },
+          {
+            "type": "enclosed_body",
             "named": true
           },
           {
@@ -1274,22 +1274,22 @@
     "type": "constructor",
     "named": true,
     "fields": {
-      "brace_enclosed_body": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "constructor_body",
-            "named": true
-          }
-        ]
-      },
       "decorator_list": {
         "multiple": true,
         "required": false,
         "types": [
           {
             "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "constructor_body",
             "named": true
           }
         ]
@@ -1571,25 +1571,41 @@
     }
   },
   {
-    "type": "enum",
+    "type": "enclosed_body",
     "named": true,
     "fields": {
-      "brace_enclosed_body": {
-        "multiple": false,
-        "required": true,
+      "statement_list": {
+        "multiple": true,
+        "required": false,
         "types": [
           {
-            "type": "enum_body",
+            "type": "statement",
             "named": true
           }
         ]
-      },
+      }
+    }
+  },
+  {
+    "type": "enum",
+    "named": true,
+    "fields": {
       "decorator_list": {
         "multiple": true,
         "required": false,
         "types": [
           {
             "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "enum_body",
             "named": true
           }
         ]
@@ -1643,7 +1659,7 @@
             "named": true
           },
           {
-            "type": "enum_constant",
+            "type": "member",
             "named": true
           }
         ]
@@ -1659,99 +1675,7 @@
       "required": false,
       "types": [
         {
-          "type": "annotation_type_declaration",
-          "named": true
-        },
-        {
-          "type": "brace_enclosed_body",
-          "named": true
-        },
-        {
-          "type": "class",
-          "named": true
-        },
-        {
-          "type": "constructor",
-          "named": true
-        },
-        {
-          "type": "enum",
-          "named": true
-        },
-        {
-          "type": "interface",
-          "named": true
-        },
-        {
-          "type": "method",
-          "named": true
-        },
-        {
-          "type": "property",
-          "named": true
-        },
-        {
-          "type": "record_declaration",
-          "named": true
-        },
-        {
-          "type": "static_initializer",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "enum_constant",
-    "named": true,
-    "fields": {
-      "brace_enclosed_body": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "class_body",
-            "named": true
-          }
-        ]
-      },
-      "decorator_list": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "annotation_",
-            "named": true
-          }
-        ]
-      },
-      "modifier_list": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "modifier",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "arguments",
+          "type": "class_body_declaration",
           "named": true
         }
       ]
@@ -1914,7 +1838,7 @@
       "required": true,
       "types": [
         {
-          "type": "brace_enclosed_body",
+          "type": "enclosed_body",
           "named": true
         }
       ]
@@ -2286,22 +2210,22 @@
     "type": "interface",
     "named": true,
     "fields": {
-      "brace_enclosed_body": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "interface_body",
-            "named": true
-          }
-        ]
-      },
       "decorator_list": {
         "multiple": true,
         "required": false,
         "types": [
           {
             "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "interface_body",
             "named": true
           }
         ]
@@ -2355,6 +2279,22 @@
       "interface_member_list": {
         "multiple": true,
         "required": false,
+        "types": [
+          {
+            "type": "interface_member",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "interface_member",
+    "named": true,
+    "fields": {
+      "member": {
+        "multiple": false,
+        "required": true,
         "types": [
           {
             "type": ";",
@@ -2437,7 +2377,7 @@
       "required": false,
       "types": [
         {
-          "type": "brace_enclosed_body",
+          "type": "enclosed_body",
           "named": true
         }
       ]
@@ -2539,7 +2479,7 @@
     "type": "marker_annotation",
     "named": true,
     "fields": {
-      "decorator_value": {
+      "decorator_expression": {
         "multiple": false,
         "required": true,
         "types": [
@@ -2556,6 +2496,62 @@
     }
   },
   {
+    "type": "member",
+    "named": true,
+    "fields": {
+      "decorator_list": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "class_body",
+            "named": true
+          }
+        ]
+      },
+      "modifier_list": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "modifier",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "arguments",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "method",
     "named": true,
     "fields": {
@@ -2564,7 +2560,7 @@
         "required": false,
         "types": [
           {
-            "type": "brace_enclosed_body",
+            "type": "enclosed_body",
             "named": true
           }
         ]
@@ -2829,7 +2825,7 @@
     "type": "object_creation_expression",
     "named": true,
     "fields": {
-      "brace_enclosed_body": {
+      "enclosed_body": {
         "multiple": false,
         "required": false,
         "types": [
@@ -3078,22 +3074,22 @@
     "type": "record_declaration",
     "named": true,
     "fields": {
-      "brace_enclosed_body": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "class_body",
-            "named": true
-          }
-        ]
-      },
       "decorator_list": {
         "multiple": true,
         "required": false,
         "types": [
           {
             "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "class_body",
             "named": true
           }
         ]
@@ -3371,10 +3367,6 @@
           "named": true
         },
         {
-          "type": "brace_enclosed_body",
-          "named": true
-        },
-        {
           "type": "break_statement",
           "named": true
         },
@@ -3384,6 +3376,10 @@
         },
         {
           "type": "do_statement",
+          "named": true
+        },
+        {
+          "type": "enclosed_body",
           "named": true
         },
         {
@@ -3450,7 +3446,7 @@
       "required": true,
       "types": [
         {
-          "type": "brace_enclosed_body",
+          "type": "enclosed_body",
           "named": true
         }
       ]
@@ -3574,7 +3570,7 @@
       "required": true,
       "types": [
         {
-          "type": "brace_enclosed_body",
+          "type": "enclosed_body",
           "named": true
         },
         {
@@ -3601,7 +3597,7 @@
         "required": true,
         "types": [
           {
-            "type": "brace_enclosed_body",
+            "type": "enclosed_body",
             "named": true
           }
         ]
@@ -3744,7 +3740,7 @@
         "required": true,
         "types": [
           {
-            "type": "brace_enclosed_body",
+            "type": "enclosed_body",
             "named": true
           }
         ]
@@ -3760,7 +3756,7 @@
         "required": true,
         "types": [
           {
-            "type": "brace_enclosed_body",
+            "type": "enclosed_body",
             "named": true
           }
         ]

@@ -47,7 +47,7 @@ module.exports = grammar({
     $._name,
     $._simple_type,
     $._reserved_identifier,
-    $._class_body_declaration,
+    // $.class_body_declaration,
     $._variable_initializer,
   ],
 
@@ -314,7 +314,7 @@ module.exports = grammar({
       seq(
         field('parameter_list', $.lambda_parameters),
         '->',
-        choice(field('return_value', $.expression), $.brace_enclosed_body)
+        choice(field('return_value', $.expression), $.enclosed_body)
       ),
 
     lambda_parameters: $ =>
@@ -424,7 +424,7 @@ module.exports = grammar({
           optional($.type_arguments),
           $._simple_type,
           $.arguments,
-          optional_with_placeholder('brace_enclosed_body', $.class_body)
+          optional_with_placeholder('enclosed_body', $.class_body)
         )
       ),
 
@@ -503,7 +503,7 @@ module.exports = grammar({
       seq(
         $.switch_label,
         '->',
-        choice($.expression_statement, $.throw, $.brace_enclosed_body)
+        choice($.expression_statement, $.throw, $.enclosed_body)
       ),
 
     switch_label: $ => choice(seq('case', commaSep1($.expression)), 'default'),
@@ -519,7 +519,7 @@ module.exports = grammar({
         $.if,
         $.while,
         $.for,
-        $.brace_enclosed_body,
+        $.enclosed_body,
         ';',
         $.assert_statement,
         $.do_statement,
@@ -535,7 +535,7 @@ module.exports = grammar({
         $.try_with_resources_statement
       ),
 
-    brace_enclosed_body: $ =>
+    enclosed_body: $ =>
       seq(
         '{',
         optional_with_placeholder('statement_list', repeat($.statement)),
@@ -585,7 +585,7 @@ module.exports = grammar({
       seq(
         'synchronized',
         $.parenthesized_expression,
-        field('body', $.brace_enclosed_body)
+        field('body', $.enclosed_body)
       ),
 
     throw: $ => seq('throw', $.expression, ';'),
@@ -598,16 +598,10 @@ module.exports = grammar({
         optional_with_placeholder('finally_clause_optional', $.finally_clause)
       ),
 
-    try_clause: $ => seq('try', field('body', $.brace_enclosed_body)),
+    try_clause: $ => seq('try', field('body', $.enclosed_body)),
 
     catch: $ =>
-      seq(
-        'catch',
-        '(',
-        $.catch_parameter,
-        ')',
-        field('body', $.brace_enclosed_body)
-      ),
+      seq('catch', '(', $.catch_parameter, ')', field('body', $.enclosed_body)),
 
     catch_parameter: $ =>
       seq(
@@ -619,13 +613,13 @@ module.exports = grammar({
 
     catch_type: $ => sep1($.unannotated_type, '|'),
 
-    finally_clause: $ => seq('finally', $.brace_enclosed_body),
+    finally_clause: $ => seq('finally', $.enclosed_body),
 
     try_with_resources_statement: $ =>
       seq(
         'try',
         field('resources', $.resource_specification),
-        field('body', $.brace_enclosed_body),
+        field('body', $.enclosed_body),
         repeat($.catch),
         optional($.finally_clause)
       ),
@@ -720,21 +714,16 @@ module.exports = grammar({
       ),
 
     block_iterator: $ => $.formal_parameter,
-    // seq(
-    //   optional_with_placeholder('modifier_list', repeat($.modifier)),
-    //   field('type_optional', $.unannotated_type),
-    //   $._variable_declarator_id
-    // ),
 
     // Annotations
 
     annotation_: $ =>
       field('decorator', choice($.marker_annotation, $.annotation)),
 
-    marker_annotation: $ => seq('@', field('decorator_value', $._name)),
+    marker_annotation: $ => seq('@', field('decorator_expression', $._name)),
 
     annotation: $ =>
-      seq('@', field('decorator_value', $.annotation_expression)),
+      seq('@', field('decorator_expression', $.annotation_expression)),
 
     annotation_expression: $ =>
       seq(
@@ -822,7 +811,7 @@ module.exports = grammar({
           'implements_list_optional',
           $.super_interfaces
         ),
-        field('brace_enclosed_body', $.enum_body)
+        field('enclosed_body', $.enum_body)
       ),
 
     enum_body: $ =>
@@ -831,7 +820,7 @@ module.exports = grammar({
         optional_with_placeholder(
           'enum_member_list',
           seq(
-            commaSep($.enum_constant),
+            commaSep(alias($.enum_constant, $.member)),
             optional(','),
             optional($.enum_body_declarations)
           )
@@ -839,7 +828,7 @@ module.exports = grammar({
         '}'
       ),
 
-    enum_body_declarations: $ => seq(';', repeat($._class_body_declaration)),
+    enum_body_declarations: $ => seq(';', repeat($.class_body_declaration)),
 
     enum_constant: $ =>
       seq(
@@ -847,7 +836,7 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('name', $.identifier),
         optional($.arguments),
-        optional(field('brace_enclosed_body', $.class_body))
+        optional(field('enclosed_body', $.class_body))
       ),
 
     class: $ =>
@@ -862,7 +851,7 @@ module.exports = grammar({
           'implements_list_optional',
           $.super_interfaces
         ),
-        field('brace_enclosed_body', $.class_body)
+        field('enclosed_body', $.class_body)
       ),
 
     modifier: $ =>
@@ -909,27 +898,30 @@ module.exports = grammar({
         '{',
         optional_with_placeholder(
           'class_member_list',
-          repeat($._class_body_declaration)
+          repeat($.class_body_declaration)
         ),
         '}'
       ),
 
-    _class_body_declaration: $ =>
-      choice(
-        $.property,
-        $.record_declaration,
-        $.method,
-        $.class,
-        $.interface,
-        $.annotation_type_declaration,
-        $.enum,
-        $.brace_enclosed_body,
-        $.static_initializer,
-        $.constructor,
-        ';'
+    class_body_declaration: $ =>
+      field(
+        'member',
+        choice(
+          $.property,
+          $.record_declaration,
+          $.method,
+          $.class,
+          $.interface,
+          $.annotation_type_declaration,
+          $.enum,
+          $.enclosed_body,
+          $.static_initializer,
+          $.constructor,
+          ';'
+        )
       ),
 
-    static_initializer: $ => seq('static', $.brace_enclosed_body),
+    static_initializer: $ => seq('static', $.enclosed_body),
 
     constructor: $ =>
       seq(
@@ -937,7 +929,7 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         $._constructor_declarator,
         optional_with_placeholder('throws_optional', $.throws),
-        field('brace_enclosed_body', $.constructor_body)
+        field('enclosed_body', $.constructor_body)
       ),
 
     _constructor_declarator: $ =>
@@ -1004,7 +996,7 @@ module.exports = grammar({
         'record',
         field('name', $.identifier),
         field('parameters', $.formal_parameters),
-        field('brace_enclosed_body', $.class_body)
+        field('enclosed_body', $.class_body)
       ),
 
     annotation_type_declaration: $ =>
@@ -1057,7 +1049,7 @@ module.exports = grammar({
           'extends_list_optional',
           $.extends_interfaces
         ),
-        field('brace_enclosed_body', $.interface_body)
+        field('enclosed_body', $.interface_body)
       ),
 
     extends_interfaces: $ => seq('extends', $.extends_list),
@@ -1070,19 +1062,23 @@ module.exports = grammar({
         '{',
         optional_with_placeholder(
           'interface_member_list',
-          repeat(
-            choice(
-              $.constant_declaration,
-              $.enum,
-              $.method,
-              $.class,
-              $.interface,
-              $.annotation_type_declaration,
-              ';'
-            )
-          )
+          repeat($.interface_member)
         ),
         '}'
+      ),
+
+    interface_member: $ =>
+      field(
+        'member',
+        choice(
+          $.constant_declaration,
+          $.enum,
+          $.method,
+          $.class,
+          $.interface,
+          $.annotation_type_declaration,
+          ';'
+        )
       ),
 
     constant_declaration: $ =>
@@ -1292,7 +1288,7 @@ module.exports = grammar({
         optional_with_placeholder('decorator_list', repeat1($.annotation_)),
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         $.method_header,
-        choice(field('body', $.brace_enclosed_body), ';')
+        choice(field('body', $.enclosed_body), ';')
       ),
 
     reserved_identifiers: $ => choice('open', 'module'),

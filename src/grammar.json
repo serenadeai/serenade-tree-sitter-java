@@ -2104,7 +2104,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "brace_enclosed_body"
+              "name": "enclosed_body"
             }
           ]
         }
@@ -2639,7 +2639,7 @@
             "members": [
               {
                 "type": "FIELD",
-                "name": "brace_enclosed_body",
+                "name": "enclosed_body",
                 "content": {
                   "type": "SYMBOL",
                   "name": "class_body"
@@ -2647,7 +2647,7 @@
               },
               {
                 "type": "FIELD",
-                "name": "brace_enclosed_body",
+                "name": "enclosed_body",
                 "content": {
                   "type": "BLANK"
                 }
@@ -3249,7 +3249,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "brace_enclosed_body"
+              "name": "enclosed_body"
             }
           ]
         }
@@ -3331,7 +3331,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "brace_enclosed_body"
+          "name": "enclosed_body"
         },
         {
           "type": "STRING",
@@ -3391,7 +3391,7 @@
         }
       ]
     },
-    "brace_enclosed_body": {
+    "enclosed_body": {
       "type": "SEQ",
       "members": [
         {
@@ -3662,7 +3662,7 @@
           "name": "body",
           "content": {
             "type": "SYMBOL",
-            "name": "brace_enclosed_body"
+            "name": "enclosed_body"
           }
         }
       ]
@@ -3748,7 +3748,7 @@
           "name": "body",
           "content": {
             "type": "SYMBOL",
-            "name": "brace_enclosed_body"
+            "name": "enclosed_body"
           }
         }
       ]
@@ -3777,7 +3777,7 @@
           "name": "body",
           "content": {
             "type": "SYMBOL",
-            "name": "brace_enclosed_body"
+            "name": "enclosed_body"
           }
         }
       ]
@@ -3875,7 +3875,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "brace_enclosed_body"
+          "name": "enclosed_body"
         }
       ]
     },
@@ -3899,7 +3899,7 @@
           "name": "body",
           "content": {
             "type": "SYMBOL",
-            "name": "brace_enclosed_body"
+            "name": "enclosed_body"
           }
         },
         {
@@ -4494,7 +4494,7 @@
         },
         {
           "type": "FIELD",
-          "name": "decorator_value",
+          "name": "decorator_expression",
           "content": {
             "type": "SYMBOL",
             "name": "_name"
@@ -4511,7 +4511,7 @@
         },
         {
           "type": "FIELD",
-          "name": "decorator_value",
+          "name": "decorator_expression",
           "content": {
             "type": "SYMBOL",
             "name": "annotation_expression"
@@ -5148,7 +5148,7 @@
         },
         {
           "type": "FIELD",
-          "name": "brace_enclosed_body",
+          "name": "enclosed_body",
           "content": {
             "type": "SYMBOL",
             "name": "enum_body"
@@ -5179,8 +5179,13 @@
                         "type": "SEQ",
                         "members": [
                           {
-                            "type": "SYMBOL",
-                            "name": "enum_constant"
+                            "type": "ALIAS",
+                            "content": {
+                              "type": "SYMBOL",
+                              "name": "enum_constant"
+                            },
+                            "named": true,
+                            "value": "member"
                           },
                           {
                             "type": "REPEAT",
@@ -5192,8 +5197,13 @@
                                   "value": ","
                                 },
                                 {
-                                  "type": "SYMBOL",
-                                  "name": "enum_constant"
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "SYMBOL",
+                                    "name": "enum_constant"
+                                  },
+                                  "named": true,
+                                  "value": "member"
                                 }
                               ]
                             }
@@ -5258,7 +5268,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "_class_body_declaration"
+            "name": "class_body_declaration"
           }
         }
       ]
@@ -5337,7 +5347,7 @@
           "members": [
             {
               "type": "FIELD",
-              "name": "brace_enclosed_body",
+              "name": "enclosed_body",
               "content": {
                 "type": "SYMBOL",
                 "name": "class_body"
@@ -5465,7 +5475,7 @@
         },
         {
           "type": "FIELD",
-          "name": "brace_enclosed_body",
+          "name": "enclosed_body",
           "content": {
             "type": "SYMBOL",
             "name": "class_body"
@@ -5697,7 +5707,7 @@
                 "type": "REPEAT",
                 "content": {
                   "type": "SYMBOL",
-                  "name": "_class_body_declaration"
+                  "name": "class_body_declaration"
                 }
               }
             },
@@ -5716,54 +5726,58 @@
         }
       ]
     },
-    "_class_body_declaration": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "property"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "record_declaration"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "method"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "class"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "interface"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "annotation_type_declaration"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "enum"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "brace_enclosed_body"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "static_initializer"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "constructor"
-        },
-        {
-          "type": "STRING",
-          "value": ";"
-        }
-      ]
+    "class_body_declaration": {
+      "type": "FIELD",
+      "name": "member",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "property"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "record_declaration"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "method"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "class"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "interface"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "annotation_type_declaration"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "enum"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "enclosed_body"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "static_initializer"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "constructor"
+          },
+          {
+            "type": "STRING",
+            "value": ";"
+          }
+        ]
+      }
     },
     "static_initializer": {
       "type": "SEQ",
@@ -5774,7 +5788,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "brace_enclosed_body"
+          "name": "enclosed_body"
         }
       ]
     },
@@ -5853,7 +5867,7 @@
         },
         {
           "type": "FIELD",
-          "name": "brace_enclosed_body",
+          "name": "enclosed_body",
           "content": {
             "type": "SYMBOL",
             "name": "constructor_body"
@@ -6237,7 +6251,7 @@
         },
         {
           "type": "FIELD",
-          "name": "brace_enclosed_body",
+          "name": "enclosed_body",
           "content": {
             "type": "SYMBOL",
             "name": "class_body"
@@ -6580,7 +6594,7 @@
         },
         {
           "type": "FIELD",
-          "name": "brace_enclosed_body",
+          "name": "enclosed_body",
           "content": {
             "type": "SYMBOL",
             "name": "interface_body"
@@ -6646,37 +6660,8 @@
               "content": {
                 "type": "REPEAT",
                 "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "constant_declaration"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "enum"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "method"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "class"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "interface"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "annotation_type_declaration"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": ";"
-                    }
-                  ]
+                  "type": "SYMBOL",
+                  "name": "interface_member"
                 }
               }
             },
@@ -6694,6 +6679,43 @@
           "value": "}"
         }
       ]
+    },
+    "interface_member": {
+      "type": "FIELD",
+      "name": "member",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "constant_declaration"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "enum"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "method"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "class"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "interface"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "annotation_type_declaration"
+          },
+          {
+            "type": "STRING",
+            "value": ";"
+          }
+        ]
+      }
     },
     "constant_declaration": {
       "type": "SEQ",
@@ -7817,7 +7839,7 @@
               "name": "body",
               "content": {
                 "type": "SYMBOL",
-                "name": "brace_enclosed_body"
+                "name": "enclosed_body"
               }
             },
             {
@@ -7991,7 +8013,6 @@
     "_name",
     "_simple_type",
     "_reserved_identifier",
-    "_class_body_declaration",
     "_variable_initializer"
   ],
   "supertypes": [
