@@ -5182,7 +5182,7 @@
                             "type": "ALIAS",
                             "content": {
                               "type": "SYMBOL",
-                              "name": "enum_constant"
+                              "name": "enum_member"
                             },
                             "named": true,
                             "value": "member"
@@ -5200,7 +5200,7 @@
                                   "type": "ALIAS",
                                   "content": {
                                     "type": "SYMBOL",
-                                    "name": "enum_constant"
+                                    "name": "enum_member"
                                   },
                                   "named": true,
                                   "value": "member"
@@ -5272,6 +5272,10 @@
           }
         }
       ]
+    },
+    "enum_member": {
+      "type": "SYMBOL",
+      "name": "enum_constant"
     },
     "enum_constant": {
       "type": "SEQ",

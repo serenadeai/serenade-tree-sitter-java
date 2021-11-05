@@ -820,7 +820,7 @@ module.exports = grammar({
         optional_with_placeholder(
           'enum_member_list',
           seq(
-            commaSep(alias($.enum_constant, $.member)),
+            commaSep(alias($.enum_member, $.member)),
             optional(','),
             optional($.enum_body_declarations)
           )
@@ -829,6 +829,8 @@ module.exports = grammar({
       ),
 
     enum_body_declarations: $ => seq(';', repeat($.class_body_declaration)),
+
+    enum_member: $ => $.enum_constant,
 
     enum_constant: $ =>
       seq(

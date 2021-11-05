@@ -1682,6 +1682,62 @@
     }
   },
   {
+    "type": "enum_constant",
+    "named": true,
+    "fields": {
+      "decorator_list": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "annotation_",
+            "named": true
+          }
+        ]
+      },
+      "enclosed_body": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "class_body",
+            "named": true
+          }
+        ]
+      },
+      "modifier_list": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "modifier",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "arguments",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "explicit_constructor_invocation",
     "named": true,
     "fields": {
@@ -2498,54 +2554,13 @@
   {
     "type": "member",
     "named": true,
-    "fields": {
-      "decorator_list": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "annotation_",
-            "named": true
-          }
-        ]
-      },
-      "enclosed_body": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "class_body",
-            "named": true
-          }
-        ]
-      },
-      "modifier_list": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "modifier",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      }
-    },
+    "fields": {},
     "children": {
       "multiple": false,
-      "required": false,
+      "required": true,
       "types": [
         {
-          "type": "arguments",
+          "type": "enum_constant",
           "named": true
         }
       ]
