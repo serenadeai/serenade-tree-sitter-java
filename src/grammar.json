@@ -1334,7 +1334,7 @@
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_reserved_identifier"
+                  "name": "reserved_identifier_"
                 },
                 {
                   "type": "SYMBOL",
@@ -2425,7 +2425,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_reserved_identifier"
+          "name": "reserved_identifier_"
         },
         {
           "type": "SYMBOL",
@@ -2469,7 +2469,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "_simple_type"
+            "name": "simple_type_"
           },
           {
             "type": "CHOICE",
@@ -2628,7 +2628,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "_simple_type"
+            "name": "simple_type_"
           },
           {
             "type": "SYMBOL",
@@ -2714,7 +2714,7 @@
               },
               {
                 "type": "SYMBOL",
-                "name": "_reserved_identifier"
+                "name": "reserved_identifier_"
               },
               {
                 "type": "SYMBOL",
@@ -2770,7 +2770,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "_reserved_identifier"
+              "name": "reserved_identifier_"
             }
           ]
         },
@@ -2836,7 +2836,7 @@
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_reserved_identifier"
+                  "name": "reserved_identifier_"
                 }
               ]
             }
@@ -4339,12 +4339,8 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "FIELD",
-          "name": "init",
-          "content": {
-            "type": "SYMBOL",
-            "name": "local_variable_declaration"
-          }
+          "type": "SYMBOL",
+          "name": "local_variable_declaration"
         },
         {
           "type": "SEQ",
@@ -4356,12 +4352,8 @@
                   "type": "SEQ",
                   "members": [
                     {
-                      "type": "FIELD",
-                      "name": "init",
-                      "content": {
-                        "type": "SYMBOL",
-                        "name": "expression"
-                      }
+                      "type": "SYMBOL",
+                      "name": "expression"
                     },
                     {
                       "type": "REPEAT",
@@ -4373,12 +4365,8 @@
                             "value": ","
                           },
                           {
-                            "type": "FIELD",
-                            "name": "init",
-                            "content": {
-                              "type": "SYMBOL",
-                              "name": "expression"
-                            }
+                            "type": "SYMBOL",
+                            "name": "expression"
                           }
                         ]
                       }
@@ -6003,21 +5991,17 @@
                   ]
                 },
                 {
-                  "type": "FIELD",
-                  "name": "constructor_",
-                  "content": {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "SYMBOL",
-                        "name": "this"
-                      },
-                      {
-                        "type": "SYMBOL",
-                        "name": "super"
-                      }
-                    ]
-                  }
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "this"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "super"
+                    }
+                  ]
                 }
               ]
             },
@@ -6054,12 +6038,8 @@
                   ]
                 },
                 {
-                  "type": "FIELD",
-                  "name": "constructor_",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "super"
-                  }
+                  "type": "SYMBOL",
+                  "name": "super"
                 }
               ]
             }
@@ -6084,7 +6064,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_reserved_identifier"
+          "name": "reserved_identifier_"
         },
         {
           "type": "SYMBOL",
@@ -6911,7 +6891,7 @@
                   },
                   {
                     "type": "SYMBOL",
-                    "name": "_reserved_identifier"
+                    "name": "reserved_identifier_"
                   }
                 ]
               },
@@ -7028,7 +7008,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_type"
+            "name": "simple_type_"
           },
           {
             "type": "SYMBOL",
@@ -7037,7 +7017,7 @@
         ]
       }
     },
-    "_simple_type": {
+    "simple_type_": {
       "type": "FIELD",
       "name": "type",
       "content": {
@@ -7336,7 +7316,7 @@
               },
               {
                 "type": "SYMBOL",
-                "name": "_reserved_identifier"
+                "name": "reserved_identifier_"
               }
             ]
           }
@@ -7867,7 +7847,7 @@
         }
       ]
     },
-    "_reserved_identifier": {
+    "reserved_identifier_": {
       "type": "ALIAS",
       "content": {
         "type": "SYMBOL",
@@ -7976,6 +7956,28 @@
       "primary_expression"
     ],
     [
+      "primary_expression",
+      "simple_type_"
+    ],
+    [
+      "primary_expression",
+      "simple_type_",
+      "scoped_type_identifier"
+    ],
+    [
+      "primary_expression",
+      "simple_type_",
+      "lambda_parameter_list"
+    ],
+    [
+      "simple_type_",
+      "scoped_type_identifier"
+    ],
+    [
+      "simple_type_",
+      "generic_type"
+    ],
+    [
       "if"
     ],
     [
@@ -8015,15 +8017,8 @@
   "externals": [],
   "inline": [
     "_name",
-    "_simple_type",
-    "_reserved_identifier",
     "_variable_initializer"
   ],
-  "supertypes": [
-    "expression",
-    "primary_expression",
-    "_literal",
-    "_simple_type"
-  ]
+  "supertypes": []
 }
 

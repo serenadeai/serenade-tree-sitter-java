@@ -33,32 +33,15 @@ module.exports = grammar({
 
   extras: $ => [$.comment, /\s/],
 
-  supertypes: $ => [
-    $.expression,
-    // $.statement,
-    $.primary_expression,
-    $._literal,
-    // $.type,
-    $._simple_type,
-    // $.unannotated_type,
-  ],
-
   inline: $ => [
     $._name,
-    $._simple_type,
-    $._reserved_identifier,
+    // $.simple_type_,
+    // $.reserved_identifier_,
     // $.class_body_declaration,
     $._variable_initializer,
   ],
 
   conflicts: $ => [
-    // [$.modifiers, $.annotated_type, $.receiver_parameter],
-    // [
-    //   $.modifiers,
-    //   $.annotated_type,
-    //   $.module_declaration,
-    //   $.package,
-    // ],
     [$.inferred_parameters, $.primary_expression, $.unannotated_type],
     [($.unannotated_type, $.primary_expression, $.inferred_parameters)],
     [$.unannotated_type, $.primary_expression],
@@ -68,7 +51,13 @@ module.exports = grammar({
     [$.generic_type, $.primary_expression],
     // Only conflicts in switch expressions
     [$.lambda, $.primary_expression],
-    // [$.package, $.modifiers],
+
+    [$.primary_expression, $.simple_type_],
+    [$.primary_expression, $.simple_type_, $.scoped_type_identifier],
+    [$.primary_expression, $.simple_type_, $.lambda_parameter_list],
+    [$.simple_type_, $.scoped_type_identifier],
+    [$.simple_type_, $.generic_type],
+
     [$.if],
     [$.if_clause, $.else_if_clause],
 
@@ -78,7 +67,6 @@ module.exports = grammar({
     [$.lambda_parameters, $.primary_expression],
     [$.call_identifier, $._constructor_declarator],
 
-    // TODO: Not sure if we need these two, need to fix for loop to handle semicolons properly.
     [$.for_clause, $.block_initializer],
     [$.condition, $.block_initializer],
   ],
@@ -244,7 +232,7 @@ module.exports = grammar({
             'assignment_variable',
             choice(
               $.identifier,
-              $._reserved_identifier,
+              $.reserved_identifier_,
               $.field_access,
               $.array_access
             )
@@ -379,7 +367,7 @@ module.exports = grammar({
         $.class_literal,
         $.this,
         $.identifier,
-        $._reserved_identifier,
+        $.reserved_identifier_,
         $.parenthesized_expression,
         $.object_creation_expression,
         $.field_access,
@@ -393,7 +381,7 @@ module.exports = grammar({
       prec.right(
         seq(
           'new',
-          $._simple_type,
+          $.simple_type_,
           choice(
             seq(repeat1($.dimensions_expr), optional($.dimensions)),
             seq($.dimensions, field('value', $.array_initializer))
@@ -422,7 +410,7 @@ module.exports = grammar({
         seq(
           'new',
           optional($.type_arguments),
-          $._simple_type,
+          $.simple_type_,
           $.arguments,
           optional_with_placeholder('enclosed_body', $.class_body)
         )
@@ -433,7 +421,7 @@ module.exports = grammar({
         field('object', choice($.primary_expression, $.super)),
         optional(seq('.', $.super)),
         '.',
-        field('field', choice($.identifier, $._reserved_identifier, $.this))
+        field('field', choice($.identifier, $.reserved_identifier_, $.this))
       ),
 
     array_access: $ =>
@@ -448,13 +436,13 @@ module.exports = grammar({
 
     call_identifier: $ =>
       choice(
-        choice($.identifier, $._reserved_identifier),
+        choice($.identifier, $.reserved_identifier_),
         seq(
           choice($.primary_expression, $.super),
           '.',
           optional(seq($.super, '.')),
           optional($.type_arguments),
-          choice($.identifier, $._reserved_identifier)
+          choice($.identifier, $.reserved_identifier_)
         )
       ),
 
@@ -566,8 +554,6 @@ module.exports = grammar({
     break_statement: $ => seq('break', optional($.identifier), ';'),
 
     continue_statement: $ => seq('continue', optional($.identifier), ';'),
-
-    // return_value: $ => $.expression,
 
     return: $ =>
       seq(
@@ -695,10 +681,7 @@ module.exports = grammar({
       ),
 
     block_initializer: $ =>
-      choice(
-        field('init', $.local_variable_declaration),
-        seq(commaSep(field('init', $.expression)), ';')
-      ),
+      choice($.local_variable_declaration, seq(commaSep($.expression), ';')),
 
     block_update: $ => commaSep1($.expression),
 
@@ -961,15 +944,12 @@ module.exports = grammar({
     explicit_constructor_invocation: $ =>
       seq(
         choice(
-          seq(
-            optional($.type_arguments),
-            field('constructor_', choice($.this, $.super))
-          ),
+          seq(optional($.type_arguments), choice($.this, $.super)),
           seq(
             field('object', choice($.primary_expression)),
             '.',
             optional($.type_arguments),
-            field('constructor_', $.super)
+            $.super
           )
         ),
         $.arguments,
@@ -977,7 +957,7 @@ module.exports = grammar({
       ),
 
     _name: $ =>
-      choice($.identifier, $._reserved_identifier, $.scoped_identifier),
+      choice($.identifier, $.reserved_identifier_, $.scoped_identifier),
 
     scoped_identifier: $ =>
       seq(field('scope', $._name), '.', field('name', $.identifier)),
@@ -1108,11 +1088,6 @@ module.exports = grammar({
         ),
         $.declarator_assignment
       ),
-    // field(
-    //   'assignment',
-    //   choice(, )
-
-    // ),
 
     declarator_assignment: $ =>
       seq(
@@ -1125,7 +1100,7 @@ module.exports = grammar({
         field(
           'assignment_variable',
           seq(
-            choice($.identifier, $._reserved_identifier),
+            choice($.identifier, $.reserved_identifier_),
             optional($.dimensions)
           )
         )
@@ -1142,9 +1117,9 @@ module.exports = grammar({
 
     type: $ => choice($.unannotated_type, $.annotated_type),
 
-    unannotated_type: $ => field('type', choice($._simple_type, $.array_type)),
+    unannotated_type: $ => field('type', choice($.simple_type_, $.array_type)),
 
-    _simple_type: $ =>
+    simple_type_: $ =>
       field(
         'type',
         choice(
@@ -1220,7 +1195,7 @@ module.exports = grammar({
 
     method_declarator: $ =>
       seq(
-        field('identifier', choice($.identifier, $._reserved_identifier)),
+        field('identifier', choice($.identifier, $.reserved_identifier_)),
         field('parameters', $.formal_parameters),
         optional(field('dimensions', $.dimensions))
       ),
@@ -1228,14 +1203,7 @@ module.exports = grammar({
     formal_parameters: $ =>
       seq(
         '(',
-        optional_with_placeholder(
-          'parameter_list',
-          // seq(
-          //   optional($.receiver_parameter),
-          //   commaSep($.parameter)
-          // )),
-          $.parameter_list
-        ),
+        optional_with_placeholder('parameter_list', $.parameter_list),
         ')'
       ),
 
@@ -1294,7 +1262,7 @@ module.exports = grammar({
       ),
 
     reserved_identifiers: $ => choice('open', 'module'),
-    _reserved_identifier: $ => alias($.reserved_identifiers, $.identifier),
+    reserved_identifier_: $ => alias($.reserved_identifiers, $.identifier),
 
     this: $ => 'this',
 
