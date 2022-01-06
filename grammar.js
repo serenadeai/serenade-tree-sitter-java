@@ -33,47 +33,68 @@ module.exports = grammar({
 
   extras: $ => [$.comment, /\s/],
 
-  supertypes: $ => [
-    $.expression,
-    $.declaration,
-    $.statement,
-    $.primary_expression,
-    $._literal,
-    $._type,
-    $._simple_type,
-    $._unannotated_type,
-  ],
-
   inline: $ => [
     $._name,
-    $._simple_type,
-    $._reserved_identifier,
-    $._class_body_declaration,
+    // $.simple_type_,
+    // $.reserved_identifier_,
+    // $.class_body_declaration,
     $._variable_initializer,
   ],
 
   conflicts: $ => [
-    [$.modifiers, $.annotated_type, $.receiver_parameter],
-    [
-      $.modifiers,
-      $.annotated_type,
-      $.module_declaration,
-      $.package_declaration,
-    ],
-    [$._unannotated_type, $.primary_expression, $.inferred_parameters],
-    [$._unannotated_type, $.primary_expression],
-    [$._unannotated_type, $.primary_expression, $.scoped_type_identifier],
-    [$._unannotated_type, $.scoped_type_identifier],
-    [$._unannotated_type, $.generic_type],
+    [$.inferred_parameters, $.primary_expression, $.unannotated_type],
+    [($.unannotated_type, $.primary_expression, $.inferred_parameters)],
+    [$.unannotated_type, $.primary_expression],
+    [$.unannotated_type, $.primary_expression, $.scoped_type_identifier],
+    [$.unannotated_type, $.scoped_type_identifier],
+    [$.unannotated_type, $.generic_type],
     [$.generic_type, $.primary_expression],
     // Only conflicts in switch expressions
-    [$.lambda_expression, $.primary_expression],
+    [$.lambda, $.primary_expression],
+
+    [$.primary_expression, $.simple_type_],
+    [$.primary_expression, $.simple_type_, $.scoped_type_identifier],
+    [$.primary_expression, $.simple_type_, $.lambda_parameter_list],
+    [$.simple_type_, $.scoped_type_identifier],
+    [$.simple_type_, $.generic_type],
+
+    [$.if],
+    [$.if_clause, $.else_if_clause],
+
+    [$.try],
+    [$.inferred_parameters, $.formal_parameters],
+    [$.lambda_parameter_list, $.primary_expression, $.unannotated_type],
+    [$.lambda_parameters, $.primary_expression],
+    [$.call_identifier, $._constructor_declarator],
+
+    [$.for_clause, $.block_initializer],
+    [$.condition, $.block_initializer],
   ],
 
   word: $ => $.identifier,
 
   rules: {
-    program: $ => repeat($.statement),
+    program: $ =>
+      seq(
+        optional_with_placeholder('package_optional', $.package),
+        optional_with_placeholder('import_list', repeat($.import)),
+        optional_with_placeholder(
+          'type_declaration_list',
+          repeat($.type_declaration)
+        ),
+        optional_with_placeholder(
+          'statement_list',
+          repeat(
+            choice(
+              $.statement,
+              $.record_declaration,
+              $.method,
+              $.static_initializer,
+              $.constructor
+            )
+          )
+        )
+      ),
 
     // Literals
 
@@ -180,10 +201,10 @@ module.exports = grammar({
 
     expression: $ =>
       choice(
-        $.assignment_expression,
+        $.assignment_,
         $.binary_expression,
         $.instanceof_expression,
-        $.lambda_expression,
+        $.lambda,
         $.ternary_expression,
         $.update_expression,
         $.primary_expression,
@@ -197,21 +218,21 @@ module.exports = grammar({
         PREC.CAST,
         seq(
           '(',
-          sep1(field('type', $._type), '&'),
+          sep1(field('type', $.type), '&'),
           ')',
           field('value', $.expression)
         )
       ),
 
-    assignment_expression: $ =>
+    assignment_: $ =>
       prec.right(
         PREC.ASSIGN,
         seq(
           field(
-            'left',
+            'assignment_variable',
             choice(
               $.identifier,
-              $._reserved_identifier,
+              $.reserved_identifier_,
               $.field_access,
               $.array_access
             )
@@ -233,7 +254,7 @@ module.exports = grammar({
               '>>>='
             )
           ),
-          field('right', $.expression)
+          field('assignment_value', $.expression)
         )
       ),
 
@@ -274,20 +295,32 @@ module.exports = grammar({
     instanceof_expression: $ =>
       prec(
         PREC.REL,
-        seq(field('left', $.expression), 'instanceof', field('right', $._type))
+        seq(field('left', $.expression), 'instanceof', field('right', $.type))
       ),
 
-    lambda_expression: $ =>
+    lambda: $ =>
       seq(
-        field(
-          'parameters',
-          choice($.identifier, $.formal_parameters, $.inferred_parameters)
-        ),
+        field('parameter_list', $.lambda_parameters),
         '->',
-        field('body', choice($.expression, $.block))
+        choice(field('return_value', $.expression), $.enclosed_body)
       ),
 
-    inferred_parameters: $ => seq('(', commaSep1($.identifier), ')'),
+    lambda_parameters: $ =>
+      choice(
+        field('parameter', $.identifier),
+        $.formal_parameters,
+        $.inferred_parameters
+      ),
+
+    inferred_parameters: $ =>
+      seq(
+        '(',
+        optional_with_placeholder('parameter_list', $.lambda_parameter_list),
+        ')'
+      ),
+
+    lambda_parameter_list: $ =>
+      commaSep1(field('lambda_parameter', $.identifier)),
 
     ternary_expression: $ =>
       prec.right(
@@ -334,7 +367,7 @@ module.exports = grammar({
         $.class_literal,
         $.this,
         $.identifier,
-        $._reserved_identifier,
+        $.reserved_identifier_,
         $.parenthesized_expression,
         $.object_creation_expression,
         $.field_access,
@@ -348,25 +381,19 @@ module.exports = grammar({
       prec.right(
         seq(
           'new',
-          field('type', $._simple_type),
+          $.simple_type_,
           choice(
-            seq(
-              field('dimensions', repeat1($.dimensions_expr)),
-              field('dimensions', optional($.dimensions))
-            ),
-            seq(
-              field('dimensions', $.dimensions),
-              field('value', $.array_initializer)
-            )
+            seq(repeat1($.dimensions_expr), optional($.dimensions)),
+            seq($.dimensions, field('value', $.array_initializer))
           )
         )
       ),
 
-    dimensions_expr: $ => seq(repeat($._annotation), '[', $.expression, ']'),
+    dimensions_expr: $ => seq(repeat($.annotation_), '[', $.expression, ']'),
 
     parenthesized_expression: $ => seq('(', $.expression, ')'),
 
-    class_literal: $ => seq($._unannotated_type, '.', 'class'),
+    class_literal: $ => seq($.unannotated_type, '.', 'class'),
 
     object_creation_expression: $ =>
       choice(
@@ -382,10 +409,10 @@ module.exports = grammar({
       prec.right(
         seq(
           'new',
-          field('type_arguments', optional($.type_arguments)),
-          field('type', $._simple_type),
-          field('arguments', $.argument_list),
-          optional($.class_body)
+          optional($.type_arguments),
+          $.simple_type_,
+          $.arguments,
+          optional_with_placeholder('enclosed_body', $.class_body)
         )
       ),
 
@@ -394,7 +421,7 @@ module.exports = grammar({
         field('object', choice($.primary_expression, $.super)),
         optional(seq('.', $.super)),
         '.',
-        field('field', choice($.identifier, $._reserved_identifier, $.this))
+        field('field', choice($.identifier, $.reserved_identifier_, $.this))
       ),
 
     array_access: $ =>
@@ -405,47 +432,50 @@ module.exports = grammar({
         ']'
       ),
 
-    method_invocation: $ =>
-      seq(
-        choice(
-          field('name', choice($.identifier, $._reserved_identifier)),
-          seq(
-            field('object', choice($.primary_expression, $.super)),
-            '.',
-            optional(seq($.super, '.')),
-            field('type_arguments', optional($.type_arguments)),
-            field('name', choice($.identifier, $._reserved_identifier))
-          )
-        ),
-        field('arguments', $.argument_list)
+    method_invocation: $ => $.call,
+
+    call_identifier: $ =>
+      choice(
+        choice($.identifier, $.reserved_identifier_),
+        seq(
+          choice($.primary_expression, $.super),
+          '.',
+          optional(seq($.super, '.')),
+          optional($.type_arguments),
+          choice($.identifier, $.reserved_identifier_)
+        )
       ),
 
-    argument_list: $ => seq('(', commaSep($.expression), ')'),
+    call: $ => seq(field('identifier', $.call_identifier), $.arguments),
+
+    arguments: $ =>
+      seq(
+        '(',
+        optional_with_placeholder('argument_list', commaSep($.argument)),
+        ')'
+      ),
+
+    argument: $ => $.expression,
 
     method_reference: $ =>
       seq(
-        choice($._type, $.primary_expression, $.super),
+        choice(field('type_optional', $.type), $.primary_expression, $.super),
         '::',
         optional($.type_arguments),
         choice('new', $.identifier)
       ),
 
-    type_arguments: $ => seq('<', commaSep(choice($._type, $.wildcard)), '>'),
+    type_arguments: $ => seq('<', commaSep(choice($.type, $.wildcard)), '>'),
 
     wildcard: $ =>
-      seq(repeat($._annotation), '?', optional($._wildcard_bounds)),
+      seq(repeat($.annotation_), '?', optional($._wildcard_bounds)),
 
-    _wildcard_bounds: $ =>
-      choice(seq('extends', $._type), seq($.super, $._type)),
+    _wildcard_bounds: $ => choice(seq('extends', $.type), seq($.super, $.type)),
 
-    dimensions: $ => prec.right(repeat1(seq(repeat($._annotation), '[', ']'))),
+    dimensions: $ => prec.right(repeat1(seq(repeat($.annotation_), '[', ']'))),
 
     switch_expression: $ =>
-      seq(
-        'switch',
-        field('condition', $.parenthesized_expression),
-        field('body', $.switch_block)
-      ),
+      seq('switch', '(', $.condition, ')', field('body', $.switch_block)),
 
     switch_block: $ =>
       seq(
@@ -461,7 +491,7 @@ module.exports = grammar({
       seq(
         $.switch_label,
         '->',
-        choice($.expression_statement, $.throw_statement, $.block)
+        choice($.expression_statement, $.throw, $.enclosed_body)
       ),
 
     switch_label: $ => choice(seq('case', commaSep1($.expression)), 'default'),
@@ -470,30 +500,35 @@ module.exports = grammar({
 
     statement: $ =>
       choice(
-        $.declaration,
+        $.module_declaration,
+        $.annotation_type_declaration,
         $.expression_statement,
         $.labeled_statement,
-        $.if_statement,
-        $.while_statement,
-        $.for_statement,
-        $.enhanced_for_statement,
-        $.block,
+        $.if,
+        $.while,
+        $.for,
+        $.enclosed_body,
         ';',
         $.assert_statement,
         $.do_statement,
         $.break_statement,
         $.continue_statement,
-        $.return_statement,
+        $.return,
         $.yield_statement,
         $.switch_expression, //switch statements and expressions are identical
         $.synchronized_statement,
-        $.local_variable_declaration,
-        $.throw_statement,
-        $.try_statement,
+        field('variable_declaration', $.local_variable_declaration),
+        $.throw,
+        $.try,
         $.try_with_resources_statement
       ),
 
-    block: $ => seq('{', repeat($.statement), '}'),
+    enclosed_body: $ =>
+      seq(
+        '{',
+        optional_with_placeholder('statement_list', repeat($.statement)),
+        '}'
+      ),
 
     expression_statement: $ => seq($.expression, ';'),
 
@@ -510,7 +545,9 @@ module.exports = grammar({
         'do',
         field('body', $.statement),
         'while',
-        field('condition', $.parenthesized_expression),
+        '(',
+        $.condition,
+        ')',
         ';'
       ),
 
@@ -518,41 +555,58 @@ module.exports = grammar({
 
     continue_statement: $ => seq('continue', optional($.identifier), ';'),
 
-    return_statement: $ => seq('return', optional($.expression), ';'),
+    return: $ =>
+      seq(
+        'return',
+        optional_with_placeholder(
+          'return_value_optional',
+          alias($.expression, $.return_value)
+        ),
+        ';'
+      ),
 
     yield_statement: $ => seq('yield', $.expression, ';'),
 
     synchronized_statement: $ =>
-      seq('synchronized', $.parenthesized_expression, field('body', $.block)),
-
-    throw_statement: $ => seq('throw', $.expression, ';'),
-
-    try_statement: $ =>
       seq(
-        'try',
-        field('body', $.block),
-        choice(
-          repeat1($.catch_clause),
-          seq(repeat($.catch_clause), $.finally_clause)
-        )
+        'synchronized',
+        $.parenthesized_expression,
+        field('body', $.enclosed_body)
       ),
 
-    catch_clause: $ =>
-      seq('catch', '(', $.catch_formal_parameter, ')', field('body', $.block)),
+    throw: $ => seq('throw', $.expression, ';'),
 
-    catch_formal_parameter: $ =>
-      seq(optional($.modifiers), $.catch_type, $._variable_declarator_id),
+    // NOTE: This is simplified though technically we can't have try without either catch/finally.
+    try: $ =>
+      seq(
+        $.try_clause,
+        optional_with_placeholder('catch_list', repeat($.catch)),
+        optional_with_placeholder('finally_clause_optional', $.finally_clause)
+      ),
 
-    catch_type: $ => sep1($._unannotated_type, '|'),
+    try_clause: $ => seq('try', field('body', $.enclosed_body)),
 
-    finally_clause: $ => seq('finally', $.block),
+    catch: $ =>
+      seq('catch', '(', $.catch_parameter, ')', field('body', $.enclosed_body)),
+
+    catch_parameter: $ =>
+      seq(
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        $.catch_type,
+        $._variable_declarator_id
+      ),
+
+    catch_type: $ => sep1($.unannotated_type, '|'),
+
+    finally_clause: $ => seq('finally', $.enclosed_body),
 
     try_with_resources_statement: $ =>
       seq(
         'try',
         field('resources', $.resource_specification),
-        field('body', $.block),
-        repeat($.catch_clause),
+        field('body', $.enclosed_body),
+        repeat($.catch),
         optional($.finally_clause)
       ),
 
@@ -562,8 +616,9 @@ module.exports = grammar({
     resource: $ =>
       choice(
         seq(
-          optional($.modifiers),
-          field('type', $._unannotated_type),
+          optional_with_placeholder('decorator_list', repeat($.annotation_)),
+          optional_with_placeholder('modifier_list', repeat($.modifier)),
+          field('type_optional', $.unannotated_type),
           $._variable_declarator_id,
           '=',
           field('value', $.expression)
@@ -572,61 +627,90 @@ module.exports = grammar({
         $.field_access
       ),
 
-    if_statement: $ =>
-      prec.right(
+    condition: $ => $.expression,
+
+    else_clause: $ => seq('else', field('consequence', $.statement)),
+
+    else_if_clause: $ =>
+      prec.dynamic(
+        1,
         seq(
+          'else',
           'if',
-          field('condition', $.parenthesized_expression),
-          field('consequence', $.statement),
-          optional(seq('else', field('alternative', $.statement)))
+          '(',
+          $.condition,
+          ')',
+          field('consequence', $.statement)
         )
       ),
 
-    while_statement: $ =>
-      seq(
-        'while',
-        field('condition', $.parenthesized_expression),
-        field('body', $.statement)
+    if_clause: $ =>
+      prec.dynamic(
+        0,
+        seq('if', '(', $.condition, ')', field('consequence', $.statement))
       ),
 
-    for_statement: $ =>
+    if: $ =>
       seq(
-        'for',
-        '(',
-        choice(
-          field('init', $.local_variable_declaration),
-          seq(commaSep(field('init', $.expression)), ';')
+        $.if_clause,
+        optional_with_placeholder(
+          'else_if_clause_list',
+          repeat($.else_if_clause)
         ),
-        field('condition', optional($.expression)),
-        ';',
-        commaSep(field('update', $.expression)),
-        ')',
-        field('body', $.statement)
+        optional_with_placeholder('else_clause_optional', $.else_clause)
       ),
 
-    enhanced_for_statement: $ =>
+    while: $ =>
+      field('while_clause', seq('while', '(', $.condition, ')', $.statement)),
+
+    for: $ => choice($.for_clause, $.for_each_clause),
+
+    for_clause: $ =>
       seq(
         'for',
         '(',
-        optional($.modifiers),
-        field('type', $._unannotated_type),
-        $._variable_declarator_id,
-        ':',
-        field('value', $.expression),
+        optional_with_placeholder(
+          'block_initializer_optional',
+          $.block_initializer
+        ),
+        optional_with_placeholder('condition_optional', $.condition),
+        ';',
+        optional_with_placeholder('block_update_optional', $.block_update),
         ')',
-        field('body', $.statement)
+        field('for_body', $.statement)
       ),
+
+    block_initializer: $ =>
+      choice($.local_variable_declaration, seq(commaSep($.expression), ';')),
+
+    block_update: $ => commaSep1($.expression),
+
+    for_each_clause: $ =>
+      seq(
+        'for',
+        '(',
+        $.block_iterator,
+        ':',
+        field('block_collection', $.expression),
+        ')',
+        field('for_body', $.statement)
+      ),
+
+    block_iterator: $ => $.formal_parameter,
 
     // Annotations
 
-    _annotation: $ => choice($.marker_annotation, $.annotation),
+    annotation_: $ =>
+      field('decorator', choice($.marker_annotation, $.annotation)),
 
-    marker_annotation: $ => seq('@', field('name', $._name)),
+    marker_annotation: $ => seq('@', field('decorator_expression', $._name)),
 
     annotation: $ =>
+      seq('@', field('decorator_expression', $.annotation_expression)),
+
+    annotation_expression: $ =>
       seq(
-        '@',
-        field('name', $._name),
+        field('identifier', $._name),
         field('arguments', $.annotation_argument_list)
       ),
 
@@ -639,7 +723,7 @@ module.exports = grammar({
     _element_value: $ =>
       prec(
         PREC.ELEMENT_VAL,
-        choice($.expression, $.element_value_array_initializer, $._annotation)
+        choice($.expression, $.element_value_array_initializer, $.annotation_)
       ),
 
     element_value_array_initializer: $ =>
@@ -647,26 +731,15 @@ module.exports = grammar({
 
     // Declarations
 
-    declaration: $ =>
-      prec(
-        PREC.DECL,
-        choice(
-          $.module_declaration,
-          $.package_declaration,
-          $.import_declaration,
-          $.class_declaration,
-          $.interface_declaration,
-          $.annotation_type_declaration,
-          $.enum_declaration
-        )
-      ),
+    type_declaration: $ =>
+      prec(PREC.DECL, choice($.class, $.interface, $.enum)),
 
     module_declaration: $ =>
       seq(
-        repeat($._annotation),
+        repeat($.annotation_),
         optional('open'),
         'module',
-        field('name', $._name),
+        field('identifier', $._name),
         field('body', $.module_body)
       ),
 
@@ -698,10 +771,9 @@ module.exports = grammar({
 
     requires_modifier: $ => choice('transitive', 'static'),
 
-    package_declaration: $ =>
-      seq(repeat($._annotation), 'package', $._name, ';'),
+    package: $ => seq(repeat($.annotation_), 'package', $._name, ';'),
 
-    import_declaration: $ =>
+    import: $ =>
       seq(
         'import',
         optional('static'),
@@ -712,107 +784,142 @@ module.exports = grammar({
 
     asterisk: $ => '*',
 
-    enum_declaration: $ =>
+    enum: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat1($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         'enum',
         field('name', $.identifier),
-        field('interfaces', optional($.super_interfaces)),
-        field('body', $.enum_body)
+        optional_with_placeholder(
+          'implements_list_optional',
+          $.super_interfaces
+        ),
+        field('enclosed_body', $.enum_body)
       ),
 
     enum_body: $ =>
       seq(
         '{',
-        commaSep($.enum_constant),
-        optional(','),
-        optional($.enum_body_declarations),
+        optional_with_placeholder(
+          'enum_member_list',
+          seq(
+            commaSep(alias($.enum_member, $.member)),
+            optional(','),
+            optional($.enum_body_declarations)
+          )
+        ),
         '}'
       ),
 
-    enum_body_declarations: $ => seq(';', repeat($._class_body_declaration)),
+    enum_body_declarations: $ => seq(';', repeat($.class_body_declaration)),
+
+    enum_member: $ => $.enum_constant,
 
     enum_constant: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         field('name', $.identifier),
-        field('arguments', optional($.argument_list)),
-        field('body', optional($.class_body))
+        optional($.arguments),
+        optional(field('enclosed_body', $.class_body))
       ),
 
-    class_declaration: $ =>
+    class: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat1($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         'class',
         field('name', $.identifier),
-        optional(field('type_parameters', $.type_parameters)),
-        optional(field('superclass', $.superclass)),
-        optional(field('interfaces', $.super_interfaces)),
-        field('body', $.class_body)
+        optional($.type_parameter_list),
+        optional_with_placeholder('extends_optional', $.superclass),
+        optional_with_placeholder(
+          'implements_list_optional',
+          $.super_interfaces
+        ),
+        field('enclosed_body', $.class_body)
       ),
 
-    modifiers: $ =>
-      repeat1(
+    modifier: $ =>
+      choice(
+        'public',
+        'protected',
+        'private',
+        'abstract',
+        'static',
+        'final',
+        'strictfp',
+        'default',
+        'synchronized',
+        'native',
+        'transient',
+        'volatile'
+      ),
+
+    // modifiers: $ =>
+    // repeat1(
+
+    // ),
+
+    type_parameter_list: $ => seq('<', commaSep1($.type_parameter), '>'),
+
+    type_parameter: $ =>
+      seq(repeat($.annotation_), $.identifier, optional($.type_bound)),
+
+    type_bound: $ => seq('extends', $.type, repeat(seq('&', $.type))),
+
+    superclass: $ => seq('extends', $.extends_type),
+
+    super_interfaces: $ => seq('implements', $.implements_list),
+
+    implements_list: $ =>
+      seq($.implements_type, repeat(seq(',', $.implements_type))),
+
+    extends_type: $ => $.type,
+
+    implements_type: $ => $.type,
+
+    class_body: $ =>
+      seq(
+        '{',
+        optional_with_placeholder(
+          'class_member_list',
+          repeat($.class_body_declaration)
+        ),
+        '}'
+      ),
+
+    class_body_declaration: $ =>
+      field(
+        'member',
         choice(
-          $._annotation,
-          'public',
-          'protected',
-          'private',
-          'abstract',
-          'static',
-          'final',
-          'strictfp',
-          'default',
-          'synchronized',
-          'native',
-          'transient',
-          'volatile'
+          $.property,
+          $.record_declaration,
+          $.method,
+          $.class,
+          $.interface,
+          $.annotation_type_declaration,
+          $.enum,
+          $.enclosed_body,
+          $.static_initializer,
+          $.constructor,
+          ';'
         )
       ),
 
-    type_parameters: $ => seq('<', commaSep1($.type_parameter), '>'),
+    static_initializer: $ => seq('static', $.enclosed_body),
 
-    type_parameter: $ =>
-      seq(repeat($._annotation), $.identifier, optional($.type_bound)),
-
-    type_bound: $ => seq('extends', $._type, repeat(seq('&', $._type))),
-
-    superclass: $ => seq('extends', $._type),
-
-    super_interfaces: $ => seq('implements', $.interface_type_list),
-
-    interface_type_list: $ => seq($._type, repeat(seq(',', $._type))),
-
-    class_body: $ => seq('{', repeat($._class_body_declaration), '}'),
-
-    _class_body_declaration: $ =>
-      choice(
-        $.field_declaration,
-        $.record_declaration,
-        $.method_declaration,
-        $.class_declaration,
-        $.interface_declaration,
-        $.annotation_type_declaration,
-        $.enum_declaration,
-        $.block,
-        $.static_initializer,
-        $.constructor_declaration,
-        ';'
-      ),
-
-    static_initializer: $ => seq('static', $.block),
-
-    constructor_declaration: $ =>
+    constructor: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat1($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         $._constructor_declarator,
-        optional($.throws),
-        field('body', $.constructor_body)
+        optional_with_placeholder('throws_optional', $.throws),
+        field('enclosed_body', $.constructor_body)
       ),
 
     _constructor_declarator: $ =>
       seq(
-        field('type_parameters', optional($.type_parameters)),
+        optional_with_placeholder('type_parameter_list', $.type_parameter_list),
         field('name', $.identifier),
         field('parameters', $.formal_parameters)
       ),
@@ -820,55 +927,64 @@ module.exports = grammar({
     constructor_body: $ =>
       seq(
         '{',
-        optional($.explicit_constructor_invocation),
-        repeat($.statement),
+
+        optional_with_placeholder(
+          'statement_list',
+          seq(
+            optional($.wrapped_explicit_constructor_invocation),
+            repeat($.statement)
+          )
+        ),
         '}'
       ),
+
+    wrapped_explicit_constructor_invocation: $ =>
+      field('statement', $.explicit_constructor_invocation),
 
     explicit_constructor_invocation: $ =>
       seq(
         choice(
-          seq(
-            field('type_arguments', optional($.type_arguments)),
-            field('constructor', choice($.this, $.super))
-          ),
+          seq(optional($.type_arguments), choice($.this, $.super)),
           seq(
             field('object', choice($.primary_expression)),
             '.',
-            field('type_arguments', optional($.type_arguments)),
-            field('constructor', $.super)
+            optional($.type_arguments),
+            $.super
           )
         ),
-        field('arguments', $.argument_list),
+        $.arguments,
         ';'
       ),
 
     _name: $ =>
-      choice($.identifier, $._reserved_identifier, $.scoped_identifier),
+      choice($.identifier, $.reserved_identifier_, $.scoped_identifier),
 
     scoped_identifier: $ =>
       seq(field('scope', $._name), '.', field('name', $.identifier)),
 
-    field_declaration: $ =>
+    property: $ =>
       seq(
-        optional($.modifiers),
-        field('type', $._unannotated_type),
-        $._variable_declarator_list,
+        optional_with_placeholder('decorator_list', repeat1($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        field('type_optional', $.unannotated_type),
+        $.assignment_list,
         ';'
       ),
 
     record_declaration: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         'record',
         field('name', $.identifier),
         field('parameters', $.formal_parameters),
-        field('body', $.class_body)
+        field('enclosed_body', $.class_body)
       ),
 
     annotation_type_declaration: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         '@interface',
         field('name', $.identifier),
         field('body', $.annotation_type_body)
@@ -881,8 +997,8 @@ module.exports = grammar({
           choice(
             $.annotation_type_element_declaration,
             $.constant_declaration,
-            $.class_declaration,
-            $.interface_declaration,
+            $.class,
+            $.interface,
             $.annotation_type_declaration
           )
         ),
@@ -891,69 +1007,106 @@ module.exports = grammar({
 
     annotation_type_element_declaration: $ =>
       seq(
-        optional($.modifiers),
-        field('type', $._unannotated_type),
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        field('type_optional', $.unannotated_type),
         field('name', $.identifier),
         '(',
         ')',
-        field('dimensions', optional($.dimensions)),
+        optional($.dimensions),
         optional($._default_value),
         ';'
       ),
 
     _default_value: $ => seq('default', field('value', $._element_value)),
 
-    interface_declaration: $ =>
+    interface: $ =>
       seq(
-        optional($.modifiers),
+        optional_with_placeholder('decorator_list', repeat1($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
         'interface',
         field('name', $.identifier),
-        field('type_parameters', optional($.type_parameters)),
-        optional($.extends_interfaces),
-        field('body', $.interface_body)
+        optional_with_placeholder('type_parameter_list', $.type_parameter_list),
+        optional_with_placeholder(
+          'extends_list_optional',
+          $.extends_interfaces
+        ),
+        field('enclosed_body', $.interface_body)
       ),
 
-    extends_interfaces: $ => seq('extends', $.interface_type_list),
+    extends_interfaces: $ => seq('extends', $.extends_list),
+
+    extends_list: $ =>
+      seq('extends_type', $.extends_type, repeat(seq(',', $.extends_type))),
 
     interface_body: $ =>
       seq(
         '{',
-        repeat(
-          choice(
-            $.constant_declaration,
-            $.enum_declaration,
-            $.method_declaration,
-            $.class_declaration,
-            $.interface_declaration,
-            $.annotation_type_declaration,
-            ';'
-          )
+        optional_with_placeholder(
+          'interface_member_list',
+          repeat($.interface_member)
         ),
         '}'
       ),
 
+    interface_member: $ =>
+      field(
+        'member',
+        choice(
+          $.constant_declaration,
+          $.enum,
+          $.method,
+          $.class,
+          $.interface,
+          $.annotation_type_declaration,
+          ';'
+        )
+      ),
+
     constant_declaration: $ =>
       seq(
-        optional($.modifiers),
-        field('type', $._unannotated_type),
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        field('type_optional', $.unannotated_type),
         $._variable_declarator_list,
         ';'
       ),
 
     _variable_declarator_list: $ =>
-      commaSep1(field('declarator', $.variable_declarator)),
+      commaSep1(field('assignment', $.variable_declarator)),
+
+    assignment_list: $ => $._variable_declarator_list,
 
     variable_declarator: $ =>
+      choice(
+        seq(
+          $._variable_declarator_id,
+          optional_with_placeholder(
+            'assignment_value_list_optional',
+            '!!UNMATCHABLE_ba93e422'
+          )
+        ),
+        $.declarator_assignment
+      ),
+
+    declarator_assignment: $ =>
       seq(
-        $._variable_declarator_id,
-        optional(seq('=', field('value', $._variable_initializer)))
+        field('assignment_variable', $.variable_declarator_id),
+        seq('=', field('assignment_value', $._variable_initializer))
       ),
 
     _variable_declarator_id: $ =>
       seq(
-        field('name', choice($.identifier, $._reserved_identifier)),
-        field('dimensions', optional($.dimensions))
+        field(
+          'assignment_variable',
+          seq(
+            choice($.identifier, $.reserved_identifier_),
+            optional($.dimensions)
+          )
+        )
       ),
+
+    variable_declarator_id: $ => $._variable_declarator_id,
 
     _variable_initializer: $ => choice($.expression, $.array_initializer),
 
@@ -962,22 +1115,29 @@ module.exports = grammar({
 
     // Types
 
-    _type: $ => choice($._unannotated_type, $.annotated_type),
+    type: $ => choice($.unannotated_type, $.annotated_type),
 
-    _unannotated_type: $ => choice($._simple_type, $.array_type),
+    unannotated_type: $ => field('type', choice($.simple_type_, $.array_type)),
 
-    _simple_type: $ =>
-      choice(
-        $.void_type,
-        $.integral_type,
-        $.floating_point_type,
-        $.boolean_type,
-        alias($.identifier, $.type_identifier),
-        $.scoped_type_identifier,
-        $.generic_type
+    simple_type_: $ =>
+      field(
+        'type',
+        choice(
+          $.void_type,
+          $.integral_type,
+          $.floating_point_type,
+          $.boolean_type,
+          alias($.identifier, $.type_identifier),
+          $.scoped_type_identifier,
+          $.generic_type
+        )
       ),
 
-    annotated_type: $ => seq(repeat1($._annotation), $._unannotated_type),
+    annotated_type: $ =>
+      seq(
+        field('type_decorator_list', repeat1($.annotation_)),
+        $.unannotated_type
+      ),
 
     scoped_type_identifier: $ =>
       seq(
@@ -987,7 +1147,7 @@ module.exports = grammar({
           $.generic_type
         ),
         '.',
-        repeat($._annotation),
+        repeat($.annotation_),
         alias($.identifier, $.type_identifier)
       ),
 
@@ -1004,9 +1164,12 @@ module.exports = grammar({
       ),
 
     array_type: $ =>
-      seq(
-        field('element', $._unannotated_type),
-        field('dimensions', $.dimensions)
+      field(
+        'type',
+        seq(
+          $.unannotated_type, // element
+          $.dimensions // dimensions
+        )
       ),
 
     integral_type: $ => choice('byte', 'short', 'int', 'long', 'char'),
@@ -1017,75 +1180,89 @@ module.exports = grammar({
 
     void_type: $ => 'void',
 
-    _method_header: $ =>
+    method_header: $ =>
       seq(
         optional(
           seq(
-            field('type_parameters', $.type_parameters),
-            repeat($._annotation)
+            field('type_parameter_list', $.type_parameter_list),
+            optional_with_placeholder('decorator_list', repeat($.annotation_))
           )
         ),
-        field('type', $._unannotated_type),
-        $._method_declarator,
-        optional($.throws)
+        field('type_optional', $.unannotated_type),
+        $.method_declarator,
+        optional_with_placeholder('throws_optional', $.throws)
       ),
 
-    _method_declarator: $ =>
+    method_declarator: $ =>
       seq(
-        field('name', choice($.identifier, $._reserved_identifier)),
+        field('identifier', choice($.identifier, $.reserved_identifier_)),
         field('parameters', $.formal_parameters),
-        field('dimensions', optional($.dimensions))
+        optional(field('dimensions', $.dimensions))
       ),
 
     formal_parameters: $ =>
       seq(
         '(',
-        optional($.receiver_parameter),
-        commaSep(choice($.formal_parameter, $.spread_parameter)),
+        optional_with_placeholder('parameter_list', $.parameter_list),
         ')'
       ),
 
+    parameter_list: $ =>
+      choice(
+        seq($.receiver_parameter, commaSep($.parameter)),
+        seq(optional($.receiver_parameter), commaSep1($.parameter))
+      ),
+
+    parameter: $ => choice($.formal_parameter, $.spread_parameter),
+
     formal_parameter: $ =>
       seq(
-        optional($.modifiers),
-        field('type', $._unannotated_type),
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        field('type_optional', $.unannotated_type),
         $._variable_declarator_id
       ),
 
     receiver_parameter: $ =>
       seq(
-        repeat($._annotation),
-        $._unannotated_type,
+        repeat($.annotation_),
+        $.unannotated_type,
         optional(seq($.identifier, '.')),
         $.this
       ),
 
     spread_parameter: $ =>
       seq(
-        optional($.modifiers),
-        $._unannotated_type,
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        field('type_optional', $.unannotated_type),
         '...',
-        $.variable_declarator
+        field('spread_parameter_variable', $.variable_declarator)
       ),
 
-    throws: $ => seq('throws', commaSep1($._type)),
+    throws: $ => seq('throws', commaSep1($.throws_type)),
+
+    throws_type: $ => $.type,
 
     local_variable_declaration: $ =>
       seq(
-        optional($.modifiers),
-        field('type', $._unannotated_type),
-        $._variable_declarator_list,
+        optional_with_placeholder('decorator_list', repeat($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        field('type_optional', $.unannotated_type),
+        $.assignment_list,
         ';'
       ),
 
-    method_declaration: $ =>
+    method: $ =>
       seq(
-        optional($.modifiers),
-        $._method_header,
-        choice(field('body', $.block), ';')
+        optional_with_placeholder('decorator_list', repeat1($.annotation_)),
+        optional_with_placeholder('modifier_list', repeat($.modifier)),
+        $.method_header,
+        choice(field('body', $.enclosed_body), ';')
       ),
 
-    _reserved_identifier: $ => alias(choice('open', 'module'), $.identifier),
+    reserved_identifiers: $ => choice('open', 'module'),
+    reserved_identifier_: $ => alias($.reserved_identifiers, $.identifier),
 
     this: $ => 'this',
 
@@ -1115,4 +1292,8 @@ function commaSep1(rule) {
 
 function commaSep(rule) {
   return optional(commaSep1(rule))
+}
+
+function optional_with_placeholder(field_name, rule) {
+  return choice(field(field_name, rule), field(field_name, blank()))
 }
