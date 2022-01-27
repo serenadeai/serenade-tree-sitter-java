@@ -3955,7 +3955,7 @@
     }
   },
   {
-    "type": "type_arguments",
+    "type": "type_argument",
     "named": true,
     "fields": {},
     "children": {
@@ -3963,14 +3963,46 @@
       "required": false,
       "types": [
         {
+          "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "annotation_",
+          "named": true
+        },
+        {
+          "type": "super",
+          "named": true
+        },
+        {
           "type": "type",
           "named": true
         },
         {
-          "type": "wildcard",
+          "type": "unannotated_type",
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "type_arguments",
+    "named": true,
+    "fields": {
+      "type_argument_list": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "type_argument",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -4220,29 +4252,6 @@
           }
         ]
       }
-    }
-  },
-  {
-    "type": "wildcard",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "annotation_",
-          "named": true
-        },
-        {
-          "type": "super",
-          "named": true
-        },
-        {
-          "type": "type",
-          "named": true
-        }
-      ]
     }
   },
   {

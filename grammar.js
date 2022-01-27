@@ -33,13 +33,7 @@ module.exports = grammar({
 
   extras: $ => [$.comment, /\s/],
 
-  inline: $ => [
-    $._name,
-    // $.simple_type_,
-    // $.reserved_identifier_,
-    // $.class_body_declaration,
-    $._variable_initializer,
-  ],
+  inline: $ => [$._name, $._variable_initializer],
 
   conflicts: $ => [
     [$.inferred_parameters, $.primary_expression, $.unannotated_type],
@@ -465,7 +459,15 @@ module.exports = grammar({
         choice('new', $.identifier)
       ),
 
-    type_arguments: $ => seq('<', commaSep(choice($.type, $.wildcard)), '>'),
+    type_arguments: $ =>
+      seq(
+        '<',
+        field(
+          'type_argument_list',
+          commaSep(alias(choice($.type, $.wildcard), $.type_argument))
+        ),
+        '>'
+      ),
 
     wildcard: $ =>
       seq(repeat($.annotation_), '?', optional($._wildcard_bounds)),
@@ -854,11 +856,6 @@ module.exports = grammar({
         'transient',
         'volatile'
       ),
-
-    // modifiers: $ =>
-    // repeat1(
-
-    // ),
 
     type_parameter_list: $ => seq('<', commaSep1($.type_parameter), '>'),
 
