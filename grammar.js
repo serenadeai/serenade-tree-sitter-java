@@ -832,7 +832,10 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         'class',
         field('name', $.identifier),
-        optional($.type_parameter_list),
+        optional_with_placeholder(
+          'type_parameter_list_optional',
+          $.type_parameters
+        ),
         optional_with_placeholder('extends_optional', $.superclass),
         optional_with_placeholder(
           'implements_list_optional',
@@ -857,7 +860,8 @@ module.exports = grammar({
         'volatile'
       ),
 
-    type_parameter_list: $ => seq('<', commaSep1($.type_parameter), '>'),
+    type_parameters: $ =>
+      seq('<', field('type_parameter_list', commaSep1($.type_parameter)), '>'),
 
     type_parameter: $ =>
       seq(repeat($.annotation_), $.identifier, optional($.type_bound)),
@@ -916,7 +920,10 @@ module.exports = grammar({
 
     _constructor_declarator: $ =>
       seq(
-        optional_with_placeholder('type_parameter_list', $.type_parameter_list),
+        optional_with_placeholder(
+          'type_parameter_list_optional',
+          $.type_parameters
+        ),
         field('name', $.identifier),
         field('parameters', $.formal_parameters)
       ),
@@ -1023,7 +1030,10 @@ module.exports = grammar({
         optional_with_placeholder('modifier_list', repeat($.modifier)),
         'interface',
         field('name', $.identifier),
-        optional_with_placeholder('type_parameter_list', $.type_parameter_list),
+        optional_with_placeholder(
+          'type_parameter_list_optional',
+          $.type_parameters
+        ),
         optional_with_placeholder(
           'extends_list_optional',
           $.extends_interfaces
@@ -1181,7 +1191,7 @@ module.exports = grammar({
       seq(
         optional(
           seq(
-            field('type_parameter_list', $.type_parameter_list),
+            field('type_parameter_list_optional', $.type_parameters),
             optional_with_placeholder('decorator_list', repeat($.annotation_))
           )
         ),
