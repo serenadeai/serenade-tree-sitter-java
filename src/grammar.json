@@ -3146,6 +3146,10 @@
         }
       }
     },
+    "condition_optional": {
+      "type": "SYMBOL",
+      "name": "condition"
+    },
     "switch": {
       "type": "SEQ",
       "members": [
@@ -3159,7 +3163,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "condition"
+          "name": "condition_optional"
         },
         {
           "type": "STRING",
@@ -3211,7 +3215,32 @@
         ]
       }
     },
-    "modified_switch_block": {
+    "enhanced_switch": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "switch"
+        },
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "SYMBOL",
+          "name": "condition_optional"
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "enhanced_switch_block"
+        }
+      ]
+    },
+    "enhanced_switch_block": {
       "type": "SEQ",
       "members": [
         {
@@ -3221,8 +3250,17 @@
         {
           "type": "REPEAT1",
           "content": {
-            "type": "SYMBOL",
-            "name": "switch_rule"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "enhanced_case"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "enhanced_default_case"
+              }
+            ]
           }
         },
         {
@@ -3231,21 +3269,42 @@
         }
       ]
     },
-    "switch_rule": {
+    "enhanced_case": {
       "type": "SEQ",
       "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_case_header"
+        },
+        {
+          "type": "STRING",
+          "value": "->"
+        },
         {
           "type": "CHOICE",
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_case_header"
+              "name": "expression_statement"
             },
             {
-              "type": "STRING",
-              "value": "default"
+              "type": "SYMBOL",
+              "name": "throw"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "enclosed_body"
             }
           ]
+        }
+      ]
+    },
+    "enhanced_default_case": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "default"
         },
         {
           "type": "STRING",

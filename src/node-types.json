@@ -1090,6 +1090,21 @@
     }
   },
   {
+    "type": "condition_optional",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "condition",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "constant_declaration",
     "named": true,
     "fields": {
@@ -1465,6 +1480,75 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "enhanced_case",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "condition",
+          "named": true
+        },
+        {
+          "type": "enclosed_body",
+          "named": true
+        },
+        {
+          "type": "expression_statement",
+          "named": true
+        },
+        {
+          "type": "throw",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "enhanced_default_case",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "enclosed_body",
+          "named": true
+        },
+        {
+          "type": "expression_statement",
+          "named": true
+        },
+        {
+          "type": "throw",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "enhanced_switch_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "enhanced_case",
+          "named": true
+        },
+        {
+          "type": "enhanced_default_case",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -3692,7 +3776,7 @@
       "required": true,
       "types": [
         {
-          "type": "condition",
+          "type": "condition_optional",
           "named": true
         }
       ]
@@ -3712,33 +3796,6 @@
         },
         {
           "type": "default_case",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "switch_rule",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "condition",
-          "named": true
-        },
-        {
-          "type": "enclosed_body",
-          "named": true
-        },
-        {
-          "type": "expression_statement",
-          "named": true
-        },
-        {
-          "type": "throw",
           "named": true
         }
       ]

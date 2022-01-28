@@ -478,11 +478,13 @@ module.exports = grammar({
 
     dimensions: $ => prec.right(repeat1(seq(repeat($.annotation_), '[', ']'))),
 
+    condition_optional: $ => $.condition,
+
     switch: $ =>
       seq(
         'switch',
         '(',
-        $.condition,
+        $.condition_optional,
         ')',
         '{',
         optional_with_placeholder('switch_case_list', $.switch_case_list),
@@ -491,11 +493,22 @@ module.exports = grammar({
 
     switch_case_list: $ => repeat1(choice($.case, $.default_case)),
 
-    modified_switch_block: $ => seq('{', repeat1($.switch_rule), '}'),
+    enhanced_switch: $ =>
+      seq('switch', '(', $.condition_optional, ')', $.enhanced_switch_block),
 
-    switch_rule: $ =>
+    enhanced_switch_block: $ =>
+      seq('{', repeat1(choice($.enhanced_case, $.enhanced_default_case)), '}'),
+
+    enhanced_case: $ =>
       seq(
-        choice($._case_header, 'default'),
+        $._case_header,
+        '->',
+        choice($.expression_statement, $.throw, $.enclosed_body)
+      ),
+
+    enhanced_default_case: $ =>
+      seq(
+        'default',
         '->',
         choice($.expression_statement, $.throw, $.enclosed_body)
       ),
