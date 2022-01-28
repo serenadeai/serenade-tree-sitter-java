@@ -1255,6 +1255,14 @@
             "type": "SYMBOL",
             "name": "switch"
           }
+        },
+        {
+          "type": "PREC",
+          "value": 1,
+          "content": {
+            "type": "SYMBOL",
+            "name": "enhanced_switch"
+          }
         }
       ]
     },
@@ -3510,6 +3518,10 @@
         {
           "type": "SYMBOL",
           "name": "switch"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "enhanced_switch"
         },
         {
           "type": "SYMBOL",

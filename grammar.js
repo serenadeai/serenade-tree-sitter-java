@@ -206,7 +206,8 @@ module.exports = grammar({
         $.primary_expression,
         $.unary_expression,
         $.cast_expression,
-        prec(PREC.SWITCH_EXP, $.switch)
+        prec(PREC.SWITCH_EXP, $.switch),
+        prec(PREC.SWITCH_EXP, $.enhanced_switch)
       ),
 
     cast_expression: $ =>
@@ -551,6 +552,7 @@ module.exports = grammar({
         $.return,
         $.yield_statement,
         $.switch, //switch statements and expressions are identical
+        $.enhanced_switch,
         $.synchronized_statement,
         field('variable_declaration', $.local_variable_declaration),
         $.throw,

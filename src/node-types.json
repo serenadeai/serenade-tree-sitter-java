@@ -1533,6 +1533,25 @@
     }
   },
   {
+    "type": "enhanced_switch",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "condition_optional",
+          "named": true
+        },
+        {
+          "type": "enhanced_switch_block",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "enhanced_switch_block",
     "named": true,
     "fields": {},
@@ -1758,6 +1777,10 @@
         },
         {
           "type": "cast_expression",
+          "named": true
+        },
+        {
+          "type": "enhanced_switch",
           "named": true
         },
         {
@@ -3436,6 +3459,10 @@
           "named": true
         },
         {
+          "type": "enhanced_switch",
+          "named": true
+        },
+        {
           "type": "instanceof_expression",
           "named": true
         },
@@ -3654,6 +3681,10 @@
         },
         {
           "type": "enclosed_body",
+          "named": true
+        },
+        {
+          "type": "enhanced_switch",
           "named": true
         },
         {
