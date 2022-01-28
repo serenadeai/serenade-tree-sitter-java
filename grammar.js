@@ -63,6 +63,8 @@ module.exports = grammar({
 
     [$.for_clause, $.block_initializer],
     [$.condition, $.block_initializer],
+    [$.default_case],
+    [$.case],
   ],
 
   word: $ => $.identifier,
@@ -204,7 +206,7 @@ module.exports = grammar({
         $.primary_expression,
         $.unary_expression,
         $.cast_expression,
-        prec(PREC.SWITCH_EXP, $.switch_expression)
+        prec(PREC.SWITCH_EXP, $.switch)
       ),
 
     cast_expression: $ =>
@@ -476,27 +478,45 @@ module.exports = grammar({
 
     dimensions: $ => prec.right(repeat1(seq(repeat($.annotation_), '[', ']'))),
 
-    switch_expression: $ =>
-      seq('switch', '(', $.condition, ')', field('body', $.switch_block)),
-
-    switch_block: $ =>
+    switch: $ =>
       seq(
+        'switch',
+        '(',
+        $.condition,
+        ')',
         '{',
-        choice(repeat($.switch_block_statement_group), repeat($.switch_rule)),
+        optional_with_placeholder('switch_case_list', $.switch_case_list),
         '}'
       ),
 
-    switch_block_statement_group: $ =>
-      prec.left(seq(repeat1(seq($.switch_label, ':')), repeat($.statement))),
+    switch_case_list: $ => repeat1(choice($.case, $.default_case)),
+
+    modified_switch_block: $ => seq('{', repeat1($.switch_rule), '}'),
 
     switch_rule: $ =>
       seq(
-        $.switch_label,
+        choice($._case_header, 'default'),
         '->',
         choice($.expression_statement, $.throw, $.enclosed_body)
       ),
 
-    switch_label: $ => choice(seq('case', commaSep1($.expression)), 'default'),
+    _case_header: $ => seq('case', alias($.case_condition, $.condition)),
+
+    case: $ =>
+      seq(
+        $._case_header,
+        ':',
+        optional_with_placeholder('statement_list', repeat($.statement))
+      ),
+
+    case_condition: $ => commaSep1($.expression),
+
+    default_case: $ =>
+      seq(
+        'default',
+        ':',
+        optional_with_placeholder('statement_list', repeat($.statement))
+      ),
 
     // Statements
 
@@ -517,7 +537,7 @@ module.exports = grammar({
         $.continue_statement,
         $.return,
         $.yield_statement,
-        $.switch_expression, //switch statements and expressions are identical
+        $.switch, //switch statements and expressions are identical
         $.synchronized_statement,
         field('variable_declaration', $.local_variable_declaration),
         $.throw,
@@ -1038,6 +1058,7 @@ module.exports = grammar({
           'extends_list_optional',
           $.extends_interfaces
         ),
+
         field('enclosed_body', $.interface_body)
       ),
 
