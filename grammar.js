@@ -462,15 +462,10 @@ module.exports = grammar({
         choice('new', $.identifier)
       ),
 
+    type_argument: $ => choice($.type, $.wildcard),
+
     type_arguments: $ =>
-      seq(
-        '<',
-        field(
-          'type_argument_list',
-          commaSep(alias(choice($.type, $.wildcard), $.type_argument))
-        ),
-        '>'
-      ),
+      seq('<', field('type_argument_list', commaSep($.type_argument)), '>'),
 
     wildcard: $ =>
       seq(repeat($.annotation_), '?', optional($._wildcard_bounds)),
