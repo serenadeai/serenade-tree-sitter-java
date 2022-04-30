@@ -4055,27 +4055,15 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
-      "required": false,
+      "multiple": false,
+      "required": true,
       "types": [
-        {
-          "type": "annotated_type",
-          "named": true
-        },
-        {
-          "type": "annotation_",
-          "named": true
-        },
-        {
-          "type": "super",
-          "named": true
-        },
         {
           "type": "type",
           "named": true
         },
         {
-          "type": "unannotated_type",
+          "type": "wildcard",
           "named": true
         }
       ]
@@ -4353,6 +4341,29 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "wildcard",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "annotation_",
+          "named": true
+        },
+        {
+          "type": "super",
+          "named": true
+        },
+        {
+          "type": "type",
+          "named": true
+        }
+      ]
     }
   },
   {

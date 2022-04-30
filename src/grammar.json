@@ -2990,6 +2990,19 @@
         }
       ]
     },
+    "type_argument": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "type"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "wildcard"
+        }
+      ]
+    },
     "type_arguments": {
       "type": "SEQ",
       "members": [
@@ -3007,22 +3020,8 @@
                 "type": "SEQ",
                 "members": [
                   {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "CHOICE",
-                      "members": [
-                        {
-                          "type": "SYMBOL",
-                          "name": "type"
-                        },
-                        {
-                          "type": "SYMBOL",
-                          "name": "wildcard"
-                        }
-                      ]
-                    },
-                    "named": true,
-                    "value": "type_argument"
+                    "type": "SYMBOL",
+                    "name": "type_argument"
                   },
                   {
                     "type": "REPEAT",
@@ -3034,22 +3033,8 @@
                           "value": ","
                         },
                         {
-                          "type": "ALIAS",
-                          "content": {
-                            "type": "CHOICE",
-                            "members": [
-                              {
-                                "type": "SYMBOL",
-                                "name": "type"
-                              },
-                              {
-                                "type": "SYMBOL",
-                                "name": "wildcard"
-                              }
-                            ]
-                          },
-                          "named": true,
-                          "value": "type_argument"
+                          "type": "SYMBOL",
+                          "name": "type_argument"
                         }
                       ]
                     }
